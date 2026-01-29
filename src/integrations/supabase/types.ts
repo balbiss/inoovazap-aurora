@@ -174,39 +174,48 @@ export type Database = {
           active: boolean | null
           agent_name: string | null
           ai_config: Json | null
+          clinic_config: Json | null
           company_name: string
           created_at: string
           followup_config: Json | null
           id: string
           pastorini_id: string
           pastorini_status: string | null
+          public_booking_active: boolean | null
           schedule_config: Json | null
+          slug: string | null
           user_id: string
         }
         Insert: {
           active?: boolean | null
           agent_name?: string | null
           ai_config?: Json | null
+          clinic_config?: Json | null
           company_name: string
           created_at?: string
           followup_config?: Json | null
           id?: string
           pastorini_id: string
           pastorini_status?: string | null
+          public_booking_active?: boolean | null
           schedule_config?: Json | null
+          slug?: string | null
           user_id: string
         }
         Update: {
           active?: boolean | null
           agent_name?: string | null
           ai_config?: Json | null
+          clinic_config?: Json | null
           company_name?: string
           created_at?: string
           followup_config?: Json | null
           id?: string
           pastorini_id?: string
           pastorini_status?: string | null
+          public_booking_active?: boolean | null
           schedule_config?: Json | null
+          slug?: string | null
           user_id?: string
         }
         Relationships: []
