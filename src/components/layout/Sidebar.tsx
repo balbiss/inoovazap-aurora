@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, MessageCircle, Workflow, User, LogOut } from "lucide-react";
+import { LayoutDashboard, MessageCircle, Workflow, User, LogOut, Plug } from "lucide-react";
 import { NeonText } from "@/components/ui/NeonText";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: MessageCircle, label: "WhatsApp", path: "/whatsapp" },
+  { icon: Plug, label: "Integração", path: "/integration" },
   { icon: Workflow, label: "Automações", path: "/automacoes" },
   { icon: User, label: "Perfil", path: "/perfil" },
 ];

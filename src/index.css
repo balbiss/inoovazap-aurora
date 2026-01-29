@@ -227,6 +227,41 @@
     );
     box-shadow: 0 0 12px hsl(199 89% 48% / 0.6);
   }
+
+  /* QR Code Scanning Border Animation */
+  .qr-scanning-border {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(142 71% 45%) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: qr-scanning 2s linear infinite;
+  }
+
+  @keyframes qr-scanning {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Success Glow Animation */
+  .success-glow {
+    animation: success-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes success-pulse {
+    0%, 100% {
+      box-shadow: 0 0 20px hsl(142 71% 45% / 0.4);
+    }
+    50% {
+      box-shadow: 0 0 40px hsl(142 71% 45% / 0.8);
+    }
+  }
 }
 
 @layer utilities {

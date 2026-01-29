@@ -5,6 +5,40 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const PASTORINI_BASE_URL = 'https://zap.inoovaweb.com.br'
+
+async function callPastoriniApi(endpoint: string, method: string, body?: unknown) {
+  const apiKey = Deno.env.get('PASTORINI_API_KEY')
+  if (!apiKey) {
+    throw new Error('PASTORINI_API_KEY not configured')
+  }
+
+  const url = `${PASTORINI_BASE_URL}${endpoint}`
+  console.log(`Calling Pastorini API: ${method} ${url}`)
+
+  const options: RequestInit = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    },
+  }
+
+  if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+    options.body = JSON.stringify(body)
+  }
+
+  const response = await fetch(url, options)
+  const data = await response.json()
+
+  if (!response.ok) {
+    console.error('Pastorini API error:', data)
+    throw new Error(data.message || `API error: ${response.status}`)
+  }
+
+  return data
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -43,10 +77,179 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json()
-    const { action, instance_id, ai_config, schedule_config, agent_name } = body
+    const { action, instance_id, instance_name, ai_config, schedule_config, agent_name } = body
 
     console.log('Action:', action, 'User:', user.id, 'Instance:', instance_id)
 
+    // ========== CREATE INSTANCE ==========
+    if (action === 'create') {
+      const pastoriniId = instance_name || `inst_${user.id.slice(0, 8)}_${Date.now()}`
+      
+      console.log('Creating instance with ID:', pastoriniId)
+
+      // Create instance in Pastorini
+      const pastoriniData = await callPastoriniApi('/api/instances', 'POST', { id: pastoriniId })
+      console.log('Pastorini create response:', pastoriniData)
+
+      // Get user profile for company name
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('company_name')
+        .eq('user_id', user.id)
+        .single()
+
+      // Save instance to Supabase
+      const { data: instance, error: dbError } = await supabaseClient
+        .from('instances')
+        .insert({
+          user_id: user.id,
+          pastorini_id: pastoriniId,
+          company_name: profile?.company_name || 'Atendimento',
+          pastorini_status: 'created',
+        })
+        .select()
+        .single()
+
+      if (dbError) {
+        console.error('Database error:', dbError)
+        // Try to clean up Pastorini instance
+        try {
+          await callPastoriniApi(`/api/instances/${pastoriniId}`, 'DELETE')
+        } catch (e) {
+          console.error('Failed to cleanup Pastorini instance:', e)
+        }
+        throw new Error(dbError.message)
+      }
+
+      // Get QR Code
+      let qrCode = null
+      try {
+        const qrData = await callPastoriniApi(`/api/instances/${pastoriniId}/qr`, 'GET')
+        qrCode = qrData.qrImage || qrData.qr || qrData.qrCode
+      } catch (e) {
+        console.log('QR not ready yet:', e)
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, instance, qrCode }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // ========== GET INSTANCES ==========
+    if (action === 'get_instances') {
+      const { data: instances, error } = await supabaseClient
+        .from('instances')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Database error:', error)
+        throw new Error(error.message)
+      }
+
+      // Update status from Pastorini for each instance
+      const updatedInstances = await Promise.all(
+        (instances || []).map(async (inst) => {
+          try {
+            const statusData = await callPastoriniApi(`/api/instances/${inst.pastorini_id}/status`, 'GET')
+            if (statusData.status !== inst.pastorini_status) {
+              await supabaseClient
+                .from('instances')
+                .update({ pastorini_status: statusData.status })
+                .eq('id', inst.id)
+            }
+            return { ...inst, pastorini_status: statusData.status, phone_number: statusData.phoneNumber }
+          } catch (e) {
+            console.log('Failed to get status for instance:', inst.pastorini_id, e)
+            return inst
+          }
+        })
+      )
+
+      return new Response(
+        JSON.stringify({ success: true, instances: updatedInstances }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // ========== GET STATUS ==========
+    if (action === 'status') {
+      if (!instance_id) {
+        return new Response(
+          JSON.stringify({ error: 'instance_id is required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      const statusData = await callPastoriniApi(`/api/instances/${instance_id}/status`, 'GET')
+      
+      // Update status in database
+      await supabaseClient
+        .from('instances')
+        .update({ pastorini_status: statusData.status })
+        .eq('pastorini_id', instance_id)
+        .eq('user_id', user.id)
+
+      return new Response(
+        JSON.stringify({ success: true, ...statusData }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // ========== GET QR CODE ==========
+    if (action === 'get_qr') {
+      if (!instance_id) {
+        return new Response(
+          JSON.stringify({ error: 'instance_id is required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      const qrData = await callPastoriniApi(`/api/instances/${instance_id}/qr`, 'GET')
+
+      return new Response(
+        JSON.stringify({ success: true, qrCode: qrData.qrImage || qrData.qr || qrData.qrCode }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // ========== DELETE INSTANCE ==========
+    if (action === 'delete') {
+      if (!instance_id) {
+        return new Response(
+          JSON.stringify({ error: 'instance_id is required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Delete from Pastorini
+      try {
+        await callPastoriniApi(`/api/instances/${instance_id}`, 'DELETE')
+      } catch (e) {
+        console.log('Error deleting from Pastorini (may not exist):', e)
+      }
+
+      // Delete from database
+      const { error } = await supabaseClient
+        .from('instances')
+        .delete()
+        .eq('pastorini_id', instance_id)
+        .eq('user_id', user.id)
+
+      if (error) {
+        console.error('Database error:', error)
+        throw new Error(error.message)
+      }
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // ========== UPDATE CONFIG (existing) ==========
     if (action === 'update_config') {
       if (!instance_id) {
         return new Response(
@@ -97,6 +300,7 @@ Deno.serve(async (req) => {
       )
     }
 
+    // ========== GET CONFIG (existing) ==========
     if (action === 'get_config') {
       if (!instance_id) {
         return new Response(
@@ -134,7 +338,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Server error:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

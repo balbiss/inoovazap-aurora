@@ -1,9 +1,10 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, MessageCircle, Workflow, User } from "lucide-react";
+import { LayoutDashboard, MessageCircle, Workflow, User, Plug } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: Plug, label: "Integração", path: "/integration" },
   { icon: MessageCircle, label: "WhatsApp", path: "/whatsapp" },
   { icon: Workflow, label: "Automações", path: "/automacoes" },
   { icon: User, label: "Perfil", path: "/perfil" },
