@@ -11,6 +11,7 @@ import Doctors from "./pages/Doctors";
 import Patients from "./pages/Patients";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
+import PublicBooking from "./pages/PublicBooking";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/book/:slug" element={<PublicBooking />} />
           <Route
             path="/*"
             element={
