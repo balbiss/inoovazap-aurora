@@ -1,13 +1,13 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, MessageCircle, Workflow, User, Plug } from "lucide-react";
+import { LayoutDashboard, Calendar, Stethoscope, Users, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: Plug, label: "Integração", path: "/integration" },
-  { icon: MessageCircle, label: "WhatsApp", path: "/whatsapp" },
-  { icon: Workflow, label: "Automações", path: "/automacoes" },
-  { icon: User, label: "Perfil", path: "/perfil" },
+  { icon: LayoutDashboard, label: "Visão Geral", path: "/" },
+  { icon: Calendar, label: "Agenda", path: "/schedule" },
+  { icon: Stethoscope, label: "Profissionais", path: "/doctors" },
+  { icon: Users, label: "Pacientes", path: "/patients" },
+  { icon: Settings, label: "Configurações", path: "/settings" },
 ];
 
 export function BottomNav() {
@@ -25,19 +25,19 @@ export function BottomNav() {
               <NavLink
                 to={item.path}
                 className={cn(
-                  "flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-300",
+                  "flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-300",
                   "text-muted-foreground",
                   isActive && "bottomnav-active text-foreground"
                 )}
               >
                 <Icon 
                   className={cn(
-                    "w-6 h-6 transition-all duration-300",
+                    "w-5 h-5 transition-all duration-300",
                     isActive && "text-primary glow"
                   )} 
                 />
                 <span className={cn(
-                  "text-xs font-medium",
+                  "text-[10px] font-medium",
                   isActive && "text-primary"
                 )}>
                   {item.label}

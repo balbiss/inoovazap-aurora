@@ -1,16 +1,24 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, MessageCircle, Workflow, User, LogOut, Plug } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  Calendar, 
+  Stethoscope, 
+  Users, 
+  Settings, 
+  LogOut, 
+  MessageCircle 
+} from "lucide-react";
 import { NeonText } from "@/components/ui/NeonText";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: MessageCircle, label: "WhatsApp", path: "/whatsapp" },
-  { icon: Plug, label: "Integração", path: "/integration" },
-  { icon: Workflow, label: "Automações", path: "/automacoes" },
-  { icon: User, label: "Perfil", path: "/perfil" },
+  { icon: LayoutDashboard, label: "Visão Geral", path: "/" },
+  { icon: Calendar, label: "Agenda", path: "/schedule" },
+  { icon: Stethoscope, label: "Profissionais", path: "/doctors" },
+  { icon: Users, label: "Pacientes", path: "/patients" },
+  { icon: Settings, label: "Configurações", path: "/settings" },
 ];
 
 export function Sidebar() {
@@ -35,11 +43,11 @@ export function Sidebar() {
     <aside className="glass-sidebar fixed left-0 top-0 h-screen w-64 flex flex-col z-50">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-8">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-blue to-neon-cyan flex items-center justify-center shadow-neon">
-          <MessageCircle className="w-6 h-6 text-background" />
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center shadow-neon">
+          <Stethoscope className="w-6 h-6 text-background" />
         </div>
         <NeonText as="h1" className="text-2xl tracking-tight" glow={false}>
-          InoovaZap
+          MedClinic
         </NeonText>
       </div>
 
@@ -93,7 +101,7 @@ export function Sidebar() {
       {/* Footer */}
       <div className="px-6 py-6 border-t border-border/50">
         <p className="text-xs text-muted-foreground text-center">
-          © 2024 InoovaZap
+          © 2025 MedClinic
         </p>
       </div>
     </aside>

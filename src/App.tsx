@@ -6,11 +6,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LayoutWrapper } from "@/components/layout/LayoutWrapper";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import Index from "./pages/Index";
-import WhatsApp from "./pages/WhatsApp";
-import Automacoes from "./pages/Automacoes";
-import Perfil from "./pages/Perfil";
-import Brain from "./pages/Brain";
-import Integration from "./pages/Integration";
+import Schedule from "./pages/Schedule";
+import Doctors from "./pages/Doctors";
+import Patients from "./pages/Patients";
+import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -31,11 +30,10 @@ const App = () => (
                 <LayoutWrapper>
                   <Routes>
                     <Route path="/" element={<Index />} />
-                    <Route path="/whatsapp" element={<WhatsApp />} />
-                    <Route path="/automacoes" element={<Automacoes />} />
-                    <Route path="/brain" element={<Brain />} />
-                    <Route path="/integration" element={<Integration />} />
-                    <Route path="/perfil" element={<Perfil />} />
+                    <Route path="/schedule" element={<Schedule />} />
+                    <Route path="/doctors" element={<Doctors />} />
+                    <Route path="/patients" element={<Patients />} />
+                    <Route path="/settings" element={<Settings />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </LayoutWrapper>
