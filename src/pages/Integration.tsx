@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   MessageCircle, 
@@ -8,7 +8,8 @@ import {
   Smartphone, 
   Zap, 
   Plus,
-  QrCode
+  QrCode,
+  RefreshCw
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -24,7 +25,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -68,6 +68,10 @@ export default function Integration() {
   const [progress, setProgress] = useState(100);
   const [timeLeft, setTimeLeft] = useState(30);
   const [isRefreshingQr, setIsRefreshingQr] = useState(false);
+  const [qrError, setQrError] = useState<string | null>(null);
+  
+  // Refs for cleanup
+  const qrRetryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const queryClient = useQueryClient();
 
@@ -164,26 +168,61 @@ export default function Integration() {
     }
   }, [isQrModalOpen]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (qrRetryTimeoutRef.current) {
+        clearTimeout(qrRetryTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const fetchQrCodeWithRetry = useCallback(async (pastoriniId: string, retries = 5): Promise<string | null> => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const { data, error } = await supabase.functions.invoke("manage-instance", {
+          body: { action: "get_qr", instance_id: pastoriniId },
+        });
+        
+        if (error) throw error;
+        
+        if (data?.qrCode) {
+          return data.qrCode;
+        }
+      } catch (error) {
+        console.log(`QR fetch attempt ${i + 1}/${retries} failed:`, error);
+      }
+      
+      // Wait before retrying (increase wait time each attempt)
+      if (i < retries - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
+    }
+    return null;
+  }, []);
+
   const refreshQrCode = useCallback(async () => {
     if (!instanceData?.pastorini_id || isRefreshingQr) return;
     
     setIsRefreshingQr(true);
+    setQrError(null);
+    
     try {
-      const { data, error } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "get_qr", instance_id: instanceData.pastorini_id },
-      });
-      if (error) throw error;
-      if (data?.qrCode) {
-        setQrCode(data.qrCode);
+      const qr = await fetchQrCodeWithRetry(instanceData.pastorini_id, 3);
+      if (qr) {
+        setQrCode(qr);
+      } else {
+        setQrError("Não foi possível obter o QR Code. Tente novamente.");
       }
     } catch (error) {
       console.error("Error refreshing QR code:", error);
+      setQrError("Erro ao atualizar QR Code.");
     } finally {
       setIsRefreshingQr(false);
       setProgress(100);
       setTimeLeft(30);
     }
-  }, [instanceData?.pastorini_id, isRefreshingQr]);
+  }, [instanceData?.pastorini_id, isRefreshingQr, fetchQrCodeWithRetry]);
 
   const handleCreateInstance = async () => {
     if (instanceName.length < 2) {
@@ -194,6 +233,8 @@ export default function Integration() {
     }
 
     setIsCreating(true);
+    setQrError(null);
+    
     try {
       const { data, error } = await supabase.functions.invoke("manage-instance", {
         body: { action: "create", instance_name: instanceName },
@@ -202,20 +243,33 @@ export default function Integration() {
       if (error) throw error;
 
       setInstanceData(data.instance);
-      if (data.qrCode) {
-        setQrCode(data.qrCode);
-      }
-      
       queryClient.invalidateQueries({ queryKey: ["user-instances"] });
       
       // Close Modal 1 and open Modal 2
       setIsNameModalOpen(false);
       setIsQrModalOpen(true);
       
+      // If QR code was returned immediately, use it
+      if (data.qrCode) {
+        setQrCode(data.qrCode);
+      } else {
+        // Otherwise, try to fetch with retry
+        setIsRefreshingQr(true);
+        const qr = await fetchQrCodeWithRetry(data.instance.pastorini_id, 5);
+        setIsRefreshingQr(false);
+        
+        if (qr) {
+          setQrCode(qr);
+        } else {
+          setQrError("QR Code ainda não disponível. Clique para tentar novamente.");
+        }
+      }
+      
     } catch (error: any) {
       toast.error("Erro ao criar instância", {
         description: error.message || "Tente novamente mais tarde.",
       });
+      setIsCreating(false);
     } finally {
       setIsCreating(false);
     }
@@ -240,6 +294,7 @@ export default function Integration() {
     setInstanceData(null);
     setQrCode(null);
     setInstanceName("");
+    setQrError(null);
     setConnectionState("offline");
   };
 
@@ -469,7 +524,7 @@ export default function Integration() {
             </div>
           </div>
 
-          <DialogFooter>
+          <div className="flex justify-end gap-2">
             <Button
               variant="outline"
               onClick={() => setIsNameModalOpen(false)}
@@ -493,7 +548,7 @@ export default function Integration() {
                 </>
               )}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -518,32 +573,53 @@ export default function Integration() {
               <div className="absolute inset-0 rounded-2xl qr-scanning-border opacity-60" />
               <div className="absolute inset-[3px] rounded-xl bg-background" />
               
-              <div className="relative p-4 rounded-xl bg-white">
-                {qrCode ? (
+              <div className="relative p-4 rounded-xl bg-white min-w-[240px] min-h-[240px] flex items-center justify-center">
+                {isRefreshingQr ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+                    <p className="text-sm text-gray-500">Carregando QR Code...</p>
+                  </div>
+                ) : qrCode ? (
                   <img
                     src={qrCode}
                     alt="QR Code"
                     className="w-56 h-56 object-contain"
                   />
+                ) : qrError ? (
+                  <div className="flex flex-col items-center gap-3 p-4 text-center">
+                    <p className="text-sm text-gray-500">{qrError}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={refreshQrCode}
+                      disabled={isRefreshingQr}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Tentar Novamente
+                    </Button>
+                  </div>
                 ) : (
-                  <div className="w-56 h-56 flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-2">
                     <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+                    <p className="text-sm text-gray-500">Aguardando QR Code...</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Progress bar with timer */}
-            <div className="w-full space-y-2 mb-4">
-              <Progress value={progress} className="h-2" />
-              <p className="text-xs text-muted-foreground text-center">
-                {isRefreshingQr ? (
-                  "Atualizando QR Code..."
-                ) : (
-                  `Atualizando em ${timeLeft}s...`
-                )}
-              </p>
-            </div>
+            {qrCode && !qrError && (
+              <div className="w-full space-y-2 mb-4">
+                <Progress value={progress} className="h-2" />
+                <p className="text-xs text-muted-foreground text-center">
+                  {isRefreshingQr ? (
+                    "Atualizando QR Code..."
+                  ) : (
+                    `Atualizando em ${timeLeft}s...`
+                  )}
+                </p>
+              </div>
+            )}
 
             {/* Polling indicator */}
             <div className="flex items-center gap-2 text-primary mb-4">
@@ -564,7 +640,7 @@ export default function Integration() {
             </div>
           </div>
 
-          <DialogFooter>
+          <div className="flex justify-center">
             <Button
               variant="outline"
               onClick={handleCancelQr}
@@ -573,7 +649,7 @@ export default function Integration() {
               <X className="w-4 h-4 mr-2" />
               Cancelar
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </>
