@@ -1,26 +1,51 @@
 import { useState } from "react";
-import { format, addDays, startOfWeek, addWeeks, subWeeks } from "date-fns";
+import { format, addDays, subDays, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScheduleGrid } from "@/components/schedule/ScheduleGrid";
-import { DoctorFilter } from "@/components/schedule/DoctorFilter";
+import { AppointmentList } from "@/components/schedule/AppointmentList";
+import { ScheduleFilters } from "@/components/schedule/ScheduleFilters";
 import { NewAppointmentDialog } from "@/components/schedule/NewAppointmentDialog";
-import { useWeekAppointments } from "@/hooks/useAppointments";
+import { useFilteredAppointments, AppointmentStatus } from "@/hooks/useAppointments";
 
 export default function Schedule() {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const today = new Date();
+  const [startDate, setStartDate] = useState(format(today, "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(addDays(today, 7), "yyyy-MM-dd"));
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | undefined>(undefined);
+  const [selectedStatus, setSelectedStatus] = useState<AppointmentStatus | undefined>(undefined);
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
 
-  const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
-  const { data: appointments, isLoading } = useWeekAppointments(selectedDate, selectedDoctorId);
+  const { data: appointments, isLoading } = useFilteredAppointments(
+    new Date(startDate),
+    new Date(endDate),
+    selectedDoctorId,
+    selectedStatus
+  );
 
-  const handlePrevWeek = () => setSelectedDate(subWeeks(selectedDate, 1));
-  const handleNextWeek = () => setSelectedDate(addWeeks(selectedDate, 1));
-  const handleToday = () => setSelectedDate(new Date());
+  const handleClearFilters = () => {
+    setSelectedDoctorId(undefined);
+    setSelectedStatus(undefined);
+  };
 
-  const formattedWeek = `${format(weekStart, "d 'de' MMMM", { locale: ptBR })} - ${format(addDays(weekStart, 6), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}`;
+  const handleQuickNav = (direction: "prev" | "next" | "today") => {
+    if (direction === "today") {
+      setStartDate(format(today, "yyyy-MM-dd"));
+      setEndDate(format(addDays(today, 7), "yyyy-MM-dd"));
+    } else {
+      const currentStart = new Date(startDate);
+      const currentEnd = new Date(endDate);
+      const diff = Math.ceil((currentEnd.getTime() - currentStart.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (direction === "prev") {
+        setStartDate(format(subDays(currentStart, diff), "yyyy-MM-dd"));
+        setEndDate(format(subDays(currentEnd, diff), "yyyy-MM-dd"));
+      } else {
+        setStartDate(format(addDays(currentStart, diff), "yyyy-MM-dd"));
+        setEndDate(format(addDays(currentEnd, diff), "yyyy-MM-dd"));
+      }
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -35,61 +60,62 @@ export default function Schedule() {
           </p>
         </div>
 
-        <Button
-          onClick={() => setIsNewAppointmentOpen(true)}
-          className="bg-teal-600 hover:bg-teal-700 text-white"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Novo Agendamento
-        </Button>
-      </div>
-
-      {/* Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Date Navigation */}
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={handlePrevWeek} className="border-slate-200">
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          
-          <Button variant="outline" onClick={handleToday} className="px-4 border-slate-200">
-            Hoje
-          </Button>
-          
-          <Button variant="outline" size="icon" onClick={handleNextWeek} className="border-slate-200">
-            <ChevronRight className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-1 border border-slate-200 rounded-lg bg-white p-1">
+            <Button variant="ghost" size="icon" onClick={() => handleQuickNav("prev")} className="h-8 w-8">
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => handleQuickNav("today")} className="px-3">
+              Hoje
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => handleQuickNav("next")} className="h-8 w-8">
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
 
-          <span className="text-sm text-slate-600 ml-2 hidden md:inline font-medium">
-            {formattedWeek}
-          </span>
+          <Button
+            onClick={() => setIsNewAppointmentOpen(true)}
+            className="bg-teal-600 hover:bg-teal-700 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Agendamento
+          </Button>
         </div>
-
-        {/* Doctor Filter */}
-        <DoctorFilter 
-          value={selectedDoctorId} 
-          onChange={setSelectedDoctorId} 
-        />
       </div>
 
-      {/* Mobile Date Display */}
-      <p className="text-sm text-slate-600 md:hidden text-center font-medium">
-        {formattedWeek}
-      </p>
+      {/* Filters */}
+      <ScheduleFilters
+        startDate={startDate}
+        endDate={endDate}
+        doctorId={selectedDoctorId}
+        status={selectedStatus}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        onDoctorChange={setSelectedDoctorId}
+        onStatusChange={setSelectedStatus}
+        onClearFilters={handleClearFilters}
+      />
 
-      {/* Schedule Grid */}
-      <ScheduleGrid 
-        weekStart={weekStart}
+      {/* Summary */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-slate-600">
+          Mostrando <span className="font-medium text-slate-800">{appointments?.length || 0}</span> agendamentos
+          {selectedStatus && <span className="text-slate-400"> • Filtrado por status</span>}
+          {selectedDoctorId && <span className="text-slate-400"> • Filtrado por profissional</span>}
+        </p>
+      </div>
+
+      {/* Appointment List */}
+      <AppointmentList 
         appointments={appointments || []}
         isLoading={isLoading}
-        selectedDoctorId={selectedDoctorId}
       />
 
       {/* New Appointment Dialog */}
       <NewAppointmentDialog 
         open={isNewAppointmentOpen} 
         onOpenChange={setIsNewAppointmentOpen}
-        defaultDate={selectedDate}
+        defaultDate={new Date(startDate)}
       />
     </div>
   );
