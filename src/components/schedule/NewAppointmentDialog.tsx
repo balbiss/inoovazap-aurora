@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
-import { format, getDay } from "date-fns";
+import { format, getDay, isBefore, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Plus, Loader2, Clock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,7 @@ import { usePatients } from "@/hooks/usePatients";
 import { useCreateAppointment } from "@/hooks/useAppointments";
 import { useInstance } from "@/hooks/useInstance";
 import { PatientDialog } from "@/components/patients/PatientDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NewAppointmentDialogProps {
   open: boolean;
@@ -43,6 +45,11 @@ interface NewAppointmentDialogProps {
 interface InsuranceType {
   id: string;
   name: string;
+}
+
+interface BusySlot {
+  start_time: string;
+  end_time: string;
 }
 
 const dayNames: Record<number, string> = {
@@ -64,8 +71,8 @@ const durations = [
   { value: "120", label: "2 horas" },
 ];
 
-// Generate time slots based on doctor's schedule
-function generateTimeSlots(config: DoctorScheduleConfig): string[] {
+// Generate time slots based on doctor's schedule and duration
+function generateTimeSlots(config: DoctorScheduleConfig, duration: number): string[] {
   const slots: string[] = [];
   const [openH, openM] = config.hours.open.split(":").map(Number);
   const [closeH, closeM] = config.hours.close.split(":").map(Number);
@@ -76,19 +83,29 @@ function generateTimeSlots(config: DoctorScheduleConfig): string[] {
   let currentM = openM;
 
   while (currentH < closeH || (currentH === closeH && currentM < closeM)) {
-    // Skip lunch time
     const currentMinutes = currentH * 60 + currentM;
+    const slotEndMinutes = currentMinutes + duration;
     const lunchStart = lunchStartH * 60 + lunchStartM;
     const lunchEnd = lunchEndH * 60 + lunchEndM;
+    const closeMinutes = closeH * 60 + closeM;
 
-    if (currentMinutes < lunchStart || currentMinutes >= lunchEnd) {
-      slots.push(`${currentH.toString().padStart(2, "0")}:${currentM.toString().padStart(2, "0")}`);
+    // Skip if slot would extend past closing
+    if (slotEndMinutes > closeMinutes) break;
+
+    // Skip if slot overlaps with lunch time
+    if (currentMinutes < lunchEnd && slotEndMinutes > lunchStart) {
+      // Jump to end of lunch
+      currentH = lunchEndH;
+      currentM = lunchEndM;
+      continue;
     }
 
-    currentM += 30;
+    slots.push(`${currentH.toString().padStart(2, "0")}:${currentM.toString().padStart(2, "0")}`);
+
+    currentM += duration;
     if (currentM >= 60) {
-      currentH += 1;
-      currentM = 0;
+      currentH += Math.floor(currentM / 60);
+      currentM = currentM % 60;
     }
   }
 
@@ -117,6 +134,30 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
     return doctors?.find((d) => d.id === selectedDoctorId);
   }, [doctors, selectedDoctorId]);
 
+  // Get current duration value
+  const currentDuration = parseInt(duration) || 30;
+
+  // Fetch busy slots for selected doctor and date
+  const { data: busySlots } = useQuery({
+    queryKey: ["busy-slots-internal", selectedDoctorId, selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""],
+    queryFn: async () => {
+      if (!selectedDoctorId || !selectedDate || !instance?.id) return [];
+
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("start_time, end_time")
+        .eq("instance_id", instance.id)
+        .eq("doctor_id", selectedDoctorId)
+        .gte("start_time", startOfDay(selectedDate).toISOString())
+        .lte("start_time", endOfDay(selectedDate).toISOString())
+        .not("status", "in", '("cancelled","no_show")');
+
+      if (error) throw error;
+      return data as BusySlot[];
+    },
+    enabled: !!selectedDoctorId && !!selectedDate && !!instance?.id,
+  });
+
   // Get insurance types from instance config
   const insuranceTypes = useMemo((): InsuranceType[] => {
     if (!instance?.clinic_config) return [];
@@ -124,7 +165,7 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
     return config.insurance_types || [];
   }, [instance]);
 
-  // Generate time slots based on selected doctor's schedule
+  // Generate time slots based on selected doctor's schedule and filter busy ones
   const availableTimeSlots = useMemo(() => {
     if (!selectedDoctor?.schedule_config) {
       // Default slots if no doctor selected
@@ -134,8 +175,34 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
         return `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
       });
     }
-    return generateTimeSlots(selectedDoctor.schedule_config);
-  }, [selectedDoctor]);
+
+    const allSlots = generateTimeSlots(selectedDoctor.schedule_config, selectedDoctor.default_duration);
+    
+    if (!selectedDate || !busySlots || busySlots.length === 0) {
+      return allSlots;
+    }
+
+    // Filter out busy slots
+    return allSlots.filter((timeStr) => {
+      const [h, m] = timeStr.split(":").map(Number);
+      const slotStart = new Date(selectedDate);
+      slotStart.setHours(h, m, 0, 0);
+      const slotEnd = new Date(slotStart);
+      slotEnd.setMinutes(slotEnd.getMinutes() + currentDuration);
+
+      // Check if slot is in the past
+      if (isBefore(slotStart, new Date())) return false;
+
+      // Check overlap with busy slots
+      const overlaps = busySlots.some((b) => {
+        const busyStart = new Date(b.start_time);
+        const busyEnd = new Date(b.end_time);
+        return slotStart < busyEnd && slotEnd > busyStart;
+      });
+
+      return !overlaps;
+    });
+  }, [selectedDoctor, selectedDate, busySlots, currentDuration]);
 
   // Check if selected date is a work day for the doctor
   const isWorkDay = useMemo(() => {
