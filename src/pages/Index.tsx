@@ -1,26 +1,28 @@
+import { useState } from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { KPIGrid } from "@/components/dashboard/KPIGrid";
-import { ActivityChart } from "@/components/dashboard/ActivityChart";
-import { RecentContacts } from "@/components/dashboard/RecentContacts";
+import { MedicalKPIGrid } from "@/components/dashboard/MedicalKPIGrid";
+import { DayTimeline } from "@/components/dashboard/DayTimeline";
+import { NewAppointmentDialog } from "@/components/schedule/NewAppointmentDialog";
 
 export default function Dashboard() {
+  const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
+
   return (
     <div className="space-y-6">
       {/* Header with greeting and action button */}
-      <DashboardHeader />
+      <DashboardHeader onNewAppointment={() => setIsNewAppointmentOpen(true)} />
 
       {/* KPI Cards Grid */}
-      <KPIGrid />
+      <MedicalKPIGrid />
 
-      {/* Chart and Recent Contacts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <ActivityChart />
-        </div>
-        <div className="lg:col-span-1">
-          <RecentContacts />
-        </div>
-      </div>
+      {/* Timeline */}
+      <DayTimeline />
+
+      {/* New Appointment Dialog */}
+      <NewAppointmentDialog 
+        open={isNewAppointmentOpen} 
+        onOpenChange={setIsNewAppointmentOpen}
+      />
     </div>
   );
 }

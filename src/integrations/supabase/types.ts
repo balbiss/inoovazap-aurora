@@ -14,10 +14,74 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          created_at: string | null
+          doctor_id: string
+          end_time: string
+          id: string
+          instance_id: string
+          notes: string | null
+          patient_id: string
+          start_time: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          doctor_id: string
+          end_time: string
+          id?: string
+          instance_id: string
+          notes?: string | null
+          patient_id: string
+          start_time: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          doctor_id?: string
+          end_time?: string
+          id?: string
+          instance_id?: string
+          notes?: string | null
+          patient_id?: string
+          start_time?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
+          birth_date: string | null
+          cpf: string | null
           created_at: string
           email: string | null
+          health_insurance: string | null
           id: string
           instance_id: string
           name: string | null
@@ -26,8 +90,11 @@ export type Database = {
           profile_pic_url: string | null
         }
         Insert: {
+          birth_date?: string | null
+          cpf?: string | null
           created_at?: string
           email?: string | null
+          health_insurance?: string | null
           id?: string
           instance_id: string
           name?: string | null
@@ -36,8 +103,11 @@ export type Database = {
           profile_pic_url?: string | null
         }
         Update: {
+          birth_date?: string | null
+          cpf?: string | null
           created_at?: string
           email?: string | null
+          health_insurance?: string | null
           id?: string
           instance_id?: string
           name?: string | null
@@ -48,6 +118,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "contacts_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctors: {
+        Row: {
+          active: boolean | null
+          avatar_url: string | null
+          color: string | null
+          created_at: string | null
+          default_duration: number | null
+          id: string
+          instance_id: string
+          name: string
+          specialty: string
+        }
+        Insert: {
+          active?: boolean | null
+          avatar_url?: string | null
+          color?: string | null
+          created_at?: string | null
+          default_duration?: number | null
+          id?: string
+          instance_id: string
+          name: string
+          specialty: string
+        }
+        Update: {
+          active?: boolean | null
+          avatar_url?: string | null
+          color?: string | null
+          created_at?: string | null
+          default_duration?: number | null
+          id?: string
+          instance_id?: string
+          name?: string
+          specialty?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctors_instance_id_fkey"
             columns: ["instance_id"]
             isOneToOne: false
             referencedRelation: "instances"
