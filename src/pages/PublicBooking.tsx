@@ -59,6 +59,15 @@ function formatPhone(value: string): string {
   return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
 }
 
+// CPF mask helper
+function formatCPF(value: string): string {
+  const numbers = value.replace(/\D/g, "").slice(0, 11);
+  if (numbers.length <= 3) return numbers;
+  if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+  if (numbers.length <= 9) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+  return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9)}`;
+}
+
 export default function PublicBooking() {
   const { slug } = useParams<{ slug: string }>();
   const [step, setStep] = useState(1);
@@ -67,6 +76,7 @@ export default function PublicBooking() {
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [patientName, setPatientName] = useState("");
   const [patientPhone, setPatientPhone] = useState("");
+  const [patientCPF, setPatientCPF] = useState("");
   const [bookingResult, setBookingResult] = useState<{
     doctorName: string;
     date: string;
@@ -211,6 +221,7 @@ export default function PublicBooking() {
         p_patient_phone: patientPhone.replace(/\D/g, ""),
         p_start_time: startTime.toISOString(),
         p_end_time: endTime.toISOString(),
+        p_patient_cpf: patientCPF.replace(/\D/g, "") || null,
       });
 
       if (error) throw error;
@@ -228,6 +239,10 @@ export default function PublicBooking() {
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPatientPhone(formatPhone(e.target.value));
+  };
+
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPatientCPF(formatCPF(e.target.value));
   };
 
   const handleSelectDoctor = (doctor: PublicDoctor) => {
@@ -256,6 +271,7 @@ export default function PublicBooking() {
     setSelectedTime("");
     setPatientName("");
     setPatientPhone("");
+    setPatientCPF("");
     setBookingResult(null);
   };
 
@@ -555,6 +571,19 @@ export default function PublicBooking() {
                   placeholder="(99) 99999-9999"
                   className="h-12 text-base"
                   type="tel"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-slate-700">
+                  CPF <span className="text-slate-400 font-normal">(opcional)</span>
+                </Label>
+                <Input
+                  value={patientCPF}
+                  onChange={handleCPFChange}
+                  placeholder="000.000.000-00"
+                  className="h-12 text-base"
+                  inputMode="numeric"
                 />
               </div>
             </div>

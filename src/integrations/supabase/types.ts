@@ -264,18 +264,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      create_public_booking: {
-        Args: {
-          p_doctor_id: string
-          p_end_time: string
-          p_instance_id: string
-          p_notes?: string
-          p_patient_name: string
-          p_patient_phone: string
-          p_start_time: string
-        }
-        Returns: string
-      }
+      create_public_booking:
+        | {
+            Args: {
+              p_doctor_id: string
+              p_end_time: string
+              p_instance_id: string
+              p_notes?: string
+              p_patient_name: string
+              p_patient_phone: string
+              p_start_time: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_doctor_id: string
+              p_end_time: string
+              p_instance_id: string
+              p_notes?: string
+              p_patient_cpf?: string
+              p_patient_name: string
+              p_patient_phone: string
+              p_start_time: string
+            }
+            Returns: string
+          }
       get_busy_slots: {
         Args: { p_date: string; p_doctor_id: string }
         Returns: {
