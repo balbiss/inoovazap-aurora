@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClinicSettings } from "@/components/settings/ClinicSettings";
 import { IntegrationSettings } from "@/components/settings/IntegrationSettings";
+import { InsuranceSettings } from "@/components/settings/InsuranceSettings";
 
 export default function Settings() {
   return (
@@ -25,6 +26,12 @@ export default function Settings() {
             Clínica
           </TabsTrigger>
           <TabsTrigger 
+            value="insurance"
+            className="data-[state=active]:bg-white data-[state=active]:text-teal-700 data-[state=active]:shadow-sm"
+          >
+            Convênios
+          </TabsTrigger>
+          <TabsTrigger 
             value="integration"
             className="data-[state=active]:bg-white data-[state=active]:text-teal-700 data-[state=active]:shadow-sm"
           >
@@ -34,6 +41,10 @@ export default function Settings() {
 
         <TabsContent value="clinic" className="mt-6">
           <ClinicSettings />
+        </TabsContent>
+
+        <TabsContent value="insurance" className="mt-6">
+          <InsuranceSettings />
         </TabsContent>
 
         <TabsContent value="integration" className="mt-6">

@@ -107,6 +107,56 @@ export function useWeekAppointments(date: Date, doctorId?: string) {
   });
 }
 
+export function useFilteredAppointments(
+  startDate: Date,
+  endDate: Date,
+  doctorId?: string,
+  status?: AppointmentStatus
+) {
+  const { data: instance } = useInstance();
+
+  return useQuery({
+    queryKey: [
+      "appointments",
+      instance?.id,
+      "filtered",
+      format(startDate, "yyyy-MM-dd"),
+      format(endDate, "yyyy-MM-dd"),
+      doctorId,
+      status,
+    ],
+    queryFn: async () => {
+      if (!instance?.id) return [];
+
+      let query = supabase
+        .from("appointments")
+        .select(`
+          *,
+          doctor:doctors(id, name, specialty, color),
+          patient:contacts(id, name, phone)
+        `)
+        .eq("instance_id", instance.id)
+        .gte("start_time", startOfDay(startDate).toISOString())
+        .lte("start_time", endOfDay(endDate).toISOString())
+        .order("start_time");
+
+      if (doctorId) {
+        query = query.eq("doctor_id", doctorId);
+      }
+
+      if (status) {
+        query = query.eq("status", status);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data as Appointment[];
+    },
+    enabled: !!instance?.id,
+  });
+}
+
 export function useTodayStats() {
   const { data: instance } = useInstance();
   const today = new Date();
