@@ -1,306 +1,265 @@
 
 
-# Plano: Refatoracao da Pagina de Integracao com Fluxo de Modais
+
+# Plano: Novo Fluxo de Integracao com Estados Intermediarios
 
 ## Visao Geral
 
-Reescrever a pagina `/integration` com uma experiencia de "Wizard" guiada atraves de modais (Dialogs). O fluxo sera mais profissional, com passos claros e feedback visual aprimorado.
-
----
-
-## Fluxo do Usuario
+Modificar o fluxo da pagina `/integration` para ter um estado intermediario entre a criacao da instancia e a conexao. O novo fluxo sera:
 
 ```text
-+--------------------+     +----------------------+     +--------------------+
-|   ESTADO INICIAL   | --> |   MODAL 1: NOME      | --> |   MODAL 2: QR CODE |
-|   (Desconectado)   |     |   DA INSTANCIA       |     |   (Com Timer 30s)  |
-+--------------------+     +----------------------+     +--------------------+
-         ^                                                        |
-         |                                                        v
-         |                                              +--------------------+
-         +----------------------------------------------+   ESTADO CONECTADO |
-                     (Desconectar)                      +--------------------+
++--------------------+     +----------------------+     +----------------------+
+|   ESTADO INICIAL   | --> |   MODAL 1: NOME      | --> |   ESTADO PENDENTE    |
+|   (Desconectado)   |     |   DA INSTANCIA       |     |   (Card + Conectar)  |
++--------------------+     +----------------------+     +----------------------+
+                                                                   |
+                                                                   v
+         +--------------------+     +----------------------+       |
+         |   ESTADO CONECTADO | <-- |   MODAL 2: QR CODE   | <-----+
+         |   (Online)         |     |   (Com Timer 30s)    |
+         +--------------------+     +----------------------+
 ```
 
 ---
 
-## Estados e Componentes
+## Novos Estados
 
-### ESTADO INICIAL (Sem Conexao)
+### 1. ESTADO INICIAL (offline) - Sem nenhuma instancia
+- Card com icone WhatsApp cinza
+- Badge "Desconectado"
+- Botao "Adicionar WhatsApp"
+- Ao clicar: Abre Modal 1
 
-**Visual:**
-- GlassCard com status "Desconectado"
-- Icone de WhatsApp cinza
-- Badge de status vermelho
-- Botao "Adicionar WhatsApp" (gradiente verde/ciano)
+### 2. MODAL 1: Nome da Instancia (sem mudancas)
+- Input para nome da instancia
+- Botao "Criar Instancia" (mudanca de label)
+- Ao clicar: Cria instancia e fecha modal
+- Depois: Vai para Estado Pendente (NAO abre QR automaticamente)
 
-**Comportamento:**
-- Ao clicar no botao, abre Modal 1
+### 3. ESTADO PENDENTE (novo) - Instancia criada, nao conectada
+- Card com nome da instancia
+- Badge "Aguardando Conexao" (amarelo)
+- Botao "Conectar" (verde)
+- Ao clicar: Abre Modal 2 (QR Code)
+- Botao secundario "Excluir" (vermelho outline)
 
----
+### 4. MODAL 2: QR Code (sem mudancas na logica)
+- QR Code com timer de 30s
+- Progress bar
+- Polling de status a cada 2s
+- Ao detectar conexao: Fecha modal, vai para Estado Conectado
 
-### MODAL 1: Nome da Instancia
-
-**Visual (Dialog do Shadcn):**
-- Titulo: "Identifique seu WhatsApp"
-- Descricao: Explicacao breve
-- Input com label "Nome da Instancia"
-- Placeholder: "Ex: Comercial, Vendas, Suporte"
-- Botao "Gerar QR Code" (neon-button)
-
-**Comportamento:**
-1. Usuario digita nome da instancia
-2. Ao clicar "Gerar QR Code":
-   - Botao entra em loading
-   - Chama `manage-instance` com `{ action: 'create', instance_name: 'nome_digitado' }`
-   - Se sucesso: Fecha Modal 1, abre Modal 2 com QR Code
-   - Se erro: Toast de erro, mantem modal aberto
-
-**Validacao:**
-- Nome obrigatorio (minimo 2 caracteres)
-- Maximo 30 caracteres
+### 5. ESTADO CONECTADO (connected) - Igual ao atual
+- Card verde "Sistema Online"
+- Informacoes da instancia
+- Botao "Desconectar"
 
 ---
 
-### MODAL 2: Leitura do QR Code
+## Mudancas no Tipo de Estado
 
-**Visual (Dialog do Shadcn):**
-- Titulo: "Escaneie o QR Code"
-- Container do QR Code com borda animada (scanning)
-- Progress Bar embaixo do QR (30 segundos)
-- Instrucoes de como escanear
-- Botao "Cancelar" (fecha modal e deleta instancia)
-
-**Comportamento - Timer de Refresh (30s):**
 ```typescript
-// useEffect para timer de 30 segundos
-const [progress, setProgress] = useState(100);
-const [timeLeft, setTimeLeft] = useState(30);
+// Antes
+type ConnectionState = "loading" | "offline" | "connected";
 
-useEffect(() => {
-  if (!isQrModalOpen) return;
-  
-  const interval = setInterval(() => {
-    setTimeLeft((prev) => {
-      if (prev <= 1) {
-        // Refresh QR code
-        refreshQrCode();
-        return 30;
-      }
-      return prev - 1;
-    });
-    setProgress((prev) => Math.max(0, prev - (100 / 30)));
-  }, 1000);
-  
-  return () => clearInterval(interval);
-}, [isQrModalOpen]);
+// Depois
+type ConnectionState = "loading" | "offline" | "pending" | "connected";
 ```
 
-**Comportamento - Polling de Status (2s):**
-```typescript
-const { data: statusData } = useQuery({
-  queryKey: ['instance-status', instanceId],
-  queryFn: async () => {
-    const { data } = await supabase.functions.invoke('manage-instance', {
-      body: { action: 'status', instance_id: instanceId }
-    });
-    return data;
-  },
-  refetchInterval: 2000,
-  enabled: isQrModalOpen && !!instanceId
-});
+---
 
-// Detectar conexao
+## Logica de Determinacao do Estado
+
+```typescript
 useEffect(() => {
-  if (statusData?.status === 'CONNECTED' || statusData?.status === 'open') {
-    setIsQrModalOpen(false);
-    setConnectionState('connected');
-    toast.success('WhatsApp Conectado!', {
-      description: 'Seu numero foi conectado com sucesso.'
+  if (loadingInstances) {
+    setConnectionState("loading");
+    return;
+  }
+
+  if (instancesData?.instances?.length > 0) {
+    const instance = instancesData.instances[0];
+    setInstanceData(instance);
+
+    if (instance.pastorini_status === "CONNECTED" || instance.pastorini_status === "open") {
+      setConnectionState("connected");
+    } else {
+      // Nova logica: instancia existe mas nao conectada = pending
+      setConnectionState("pending");
+    }
+  } else {
+    setConnectionState("offline");
+  }
+}, [instancesData, loadingInstances]);
+```
+
+---
+
+## Novo Componente: Estado Pendente
+
+```typescript
+{connectionState === "pending" && instanceData && (
+  <GlassCard className="flex flex-col items-center justify-center py-12 px-8">
+    <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center mb-6">
+      <MessageCircle className="w-10 h-10 text-amber-500" />
+    </div>
+
+    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 mb-4">
+      Aguardando Conexao
+    </Badge>
+
+    <h2 className="text-xl font-semibold text-foreground mb-2">
+      {instanceData.company_name}
+    </h2>
+    <p className="text-muted-foreground text-center mb-8 max-w-md">
+      Sua instancia foi criada. Clique em "Conectar" para escanear o QR Code
+      e vincular seu WhatsApp.
+    </p>
+
+    <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+      <Button
+        onClick={handleOpenQrModal}
+        size="lg"
+        className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500"
+      >
+        <QrCode className="w-5 h-5 mr-2" />
+        Conectar
+      </Button>
+      
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="outline" size="lg" className="text-destructive border-destructive/50">
+            <X className="w-5 h-5 mr-2" />
+            Excluir
+          </Button>
+        </AlertDialogTrigger>
+        {/* Confirmacao de exclusao */}
+      </AlertDialog>
+    </div>
+  </GlassCard>
+)}
+```
+
+---
+
+## Modificacao do Modal 1
+
+Mudanca no botao:
+- Antes: "Gerar QR Code"
+- Depois: "Criar Instancia"
+
+Mudanca no comportamento:
+```typescript
+const handleCreateInstance = async () => {
+  // ... validacao e criacao ...
+  
+  setInstanceData(data.instance);
+  queryClient.invalidateQueries({ queryKey: ["user-instances"] });
+  
+  // Fechar Modal 1 e ir para estado PENDING (nao abre QR)
+  setIsNameModalOpen(false);
+  setConnectionState("pending");
+  
+  // NÃO abre o modal do QR automaticamente
+  // O usuario clicara em "Conectar" no card
+  
+  toast.success("Instancia criada!", {
+    description: "Clique em Conectar para vincular seu WhatsApp.",
+  });
+};
+```
+
+---
+
+## Nova Funcao: Abrir Modal QR
+
+```typescript
+const handleOpenQrModal = async () => {
+  if (!instanceData?.pastorini_id) return;
+  
+  setIsQrModalOpen(true);
+  setIsRefreshingQr(true);
+  setQrError(null);
+  
+  // Buscar QR Code
+  const qr = await fetchQrCodeWithRetry(instanceData.pastorini_id, 5);
+  setIsRefreshingQr(false);
+  
+  if (qr) {
+    setQrCode(qr);
+  } else {
+    setQrError("QR Code nao disponivel. Clique para tentar novamente.");
+  }
+};
+```
+
+---
+
+## Modificacao do handleCancelQr
+
+Mudanca: Ao cancelar o modal do QR, NAO deleta a instancia, apenas fecha o modal e volta para estado pending.
+
+```typescript
+const handleCancelQr = async () => {
+  setIsQrModalOpen(false);
+  setQrCode(null);
+  setQrError(null);
+  setProgress(100);
+  setTimeLeft(30);
+  // Volta para pending, NAO deleta a instancia
+  setConnectionState("pending");
+};
+```
+
+---
+
+## Nova Funcao: Excluir Instancia
+
+```typescript
+const handleDeleteInstance = async () => {
+  if (!instanceData?.pastorini_id) return;
+  
+  try {
+    await supabase.functions.invoke("manage-instance", {
+      body: { action: "delete", instance_id: instanceData.pastorini_id },
+    });
+    
+    setInstanceData(null);
+    setInstanceName("");
+    setConnectionState("offline");
+    queryClient.invalidateQueries({ queryKey: ["user-instances"] });
+    
+    toast.success("Instancia excluida", {
+      description: "A instancia foi removida com sucesso.",
+    });
+  } catch (error: any) {
+    toast.error("Erro ao excluir", {
+      description: error.message || "Tente novamente.",
     });
   }
-}, [statusData]);
-```
-
-**Ao Cancelar:**
-1. Fecha modal
-2. Chama `{ action: 'delete', instance_id: ... }`
-3. Volta para Estado Inicial
-
----
-
-### ESTADO CONECTADO (Online)
-
-**Visual:**
-- GlassCard com status verde "Sistema Online"
-- Icone de CheckCircle2 com glow verde
-- Grid de informacoes:
-  - Nome da Instancia
-  - Numero Conectado (formatado)
-  - Status do Webhook (badge "Ativo")
-- Botao "Desconectar" (vermelho, perigo)
-
-**Ao Desconectar:**
-1. Abre AlertDialog de confirmacao
-2. Se confirmar: Chama `{ action: 'delete' }`
-3. Toast de sucesso
-4. Volta para Estado Inicial
-
----
-
-## Estrutura do Codigo
-
-```typescript
-// src/pages/Integration.tsx
-
-export default function Integration() {
-  // Estados principais
-  const [connectionState, setConnectionState] = useState<'loading' | 'offline' | 'connected'>('loading');
-  const [instanceData, setInstanceData] = useState<InstanceData | null>(null);
-  
-  // Estados dos modais
-  const [isNameModalOpen, setIsNameModalOpen] = useState(false);
-  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  
-  // Estados do Modal 1
-  const [instanceName, setInstanceName] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-  
-  // Estados do Modal 2
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  const [progress, setProgress] = useState(100);
-  const [timeLeft, setTimeLeft] = useState(30);
-  
-  // ... queries, mutations, effects
-  
-  return (
-    <>
-      {/* Header da pagina */}
-      <PageHeader />
-      
-      {/* Conteudo baseado no estado */}
-      {connectionState === 'loading' && <LoadingState />}
-      {connectionState === 'offline' && <OfflineCard onConnect={() => setIsNameModalOpen(true)} />}
-      {connectionState === 'connected' && <ConnectedCard instance={instanceData} onDisconnect={...} />}
-      
-      {/* Modal 1: Nome da Instancia */}
-      <Dialog open={isNameModalOpen} onOpenChange={setIsNameModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Identifique seu WhatsApp</DialogTitle>
-            <DialogDescription>...</DialogDescription>
-          </DialogHeader>
-          <Input value={instanceName} onChange={...} placeholder="Ex: Comercial, Vendas" />
-          <DialogFooter>
-            <Button onClick={handleCreate} disabled={isCreating || !instanceName}>
-              {isCreating ? <Loader2 /> : 'Gerar QR Code'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Modal 2: QR Code */}
-      <Dialog open={isQrModalOpen} onOpenChange={handleQrModalClose}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Escaneie o QR Code</DialogTitle>
-          </DialogHeader>
-          
-          {/* QR Code com borda animada */}
-          <QRCodeDisplay qrCode={qrCode} />
-          
-          {/* Progress bar com timer */}
-          <div className="space-y-2">
-            <Progress value={progress} />
-            <p className="text-xs text-muted-foreground text-center">
-              Atualizando em {timeLeft}s...
-            </p>
-          </div>
-          
-          {/* Instrucoes */}
-          <Instructions />
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCancel}>Cancelar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
+};
 ```
 
 ---
 
-## Arquivos a Modificar
+## Resumo das Modificacoes
 
-### 1. `src/pages/Integration.tsx`
-- Reescrever completamente com novo fluxo de modais
-- Implementar timer de 30s com Progress Bar
-- Implementar polling de status a cada 2s
-- Usar Dialog e Progress do Shadcn UI
-
----
-
-## Componentes Shadcn Utilizados
-
-| Componente | Uso |
-|------------|-----|
-| `Dialog` | Modais de Nome e QR Code |
-| `DialogContent` | Container do conteudo do modal |
-| `DialogHeader` | Cabecalho com titulo e descricao |
-| `DialogFooter` | Botoes de acao |
-| `Progress` | Barra de progresso do timer 30s |
-| `Input` | Campo de nome da instancia |
-| `Button` | Acoes em todos os estados |
-| `AlertDialog` | Confirmacao de desconexao |
-| `Label` | Label do input |
+| Item | Mudanca |
+|------|---------|
+| `ConnectionState` | Adicionar estado `"pending"` |
+| `handleCreateInstance` | Nao abre QR automaticamente, vai para pending |
+| `handleCancelQr` | Nao deleta instancia, volta para pending |
+| `handleOpenQrModal` | Nova funcao para abrir QR do estado pending |
+| `handleDeleteInstance` | Nova funcao para excluir do estado pending |
+| Modal 1 botao | "Gerar QR Code" → "Criar Instancia" |
+| UI | Novo card para estado pending |
 
 ---
 
-## Detalhes Visuais
+## Arquivo a Modificar
 
-### Borda Animada do QR Code
-- Reutilizar classe `.qr-scanning-border` ja existente no CSS
-- Aplicar em container envolvendo o QR Code
+| Arquivo | Acao |
+|---------|------|
+| `src/pages/Integration.tsx` | Modificar logica de estados e adicionar estado pending |
 
-### Progress Bar Estilizada
-- Usar componente Progress do Shadcn
-- Cor primaria (ciano/azul) para indicar tempo restante
-- Animacao suave de decremento
-
-### Cards de Status
-- Glassmorphism com backdrop-blur
-- Icones com cores indicativas (cinza = offline, verde = online)
-- Badges de status com cores contrastantes
-
----
-
-## Tratamento de Erros
-
-1. **Erro ao criar instancia:**
-   - Toast de erro com mensagem da API
-   - Manter Modal 1 aberto
-   - Limpar loading do botao
-
-2. **Erro ao obter QR Code:**
-   - Mostrar mensagem no lugar do QR
-   - Botao "Tentar Novamente"
-
-3. **Erro ao verificar status:**
-   - Continuar polling (ignorar erros temporarios)
-   - Apenas logar no console
-
-4. **QR Code expirado:**
-   - Timer de 30s detecta
-   - Chama `get_qr` automaticamente
-   - Atualiza imagem sem fechar modal
-
----
-
-## Resumo das Alteracoes
-
-| Arquivo | Acao | Descricao |
-|---------|------|-----------|
-| `src/pages/Integration.tsx` | Reescrever | Nova logica com fluxo de modais wizard-style |
 
