@@ -1,140 +1,99 @@
 
 
+# Plano: Redesign do Card de Estado Pending
 
-# Plano: Novo Fluxo de Integracao com Estados Intermediarios
+## Problema Atual
 
-## Visao Geral
+O card do estado "Pending" esta ocupando muito espaco vertical com:
+- Padding excessivo (`py-12`)
+- Icone muito grande (`w-20 h-20`)
+- Layout centralizado que estende a altura
+- Texto explicativo desnecessariamente longo
 
-Modificar o fluxo da pagina `/integration` para ter um estado intermediario entre a criacao da instancia e a conexao. O novo fluxo sera:
+## Solucao Proposta
+
+Transformar o card em um layout horizontal compacto, similar a um item de lista, mantendo todas as informacoes essenciais mas em um formato mais elegante e profissional.
+
+---
+
+## Antes vs Depois
 
 ```text
-+--------------------+     +----------------------+     +----------------------+
-|   ESTADO INICIAL   | --> |   MODAL 1: NOME      | --> |   ESTADO PENDENTE    |
-|   (Desconectado)   |     |   DA INSTANCIA       |     |   (Card + Conectar)  |
-+--------------------+     +----------------------+     +----------------------+
-                                                                   |
-                                                                   v
-         +--------------------+     +----------------------+       |
-         |   ESTADO CONECTADO | <-- |   MODAL 2: QR CODE   | <-----+
-         |   (Online)         |     |   (Com Timer 30s)    |
-         +--------------------+     +----------------------+
+ANTES (Layout Vertical Centralizado):
++------------------------------------------------+
+|                                                |
+|                   [ICONE]                      |
+|                                                |
+|              [Aguardando Conexao]              |
+|                                                |
+|                  Atendimento                   |
+|                                                |
+|        Sua instancia foi criada...             |
+|                                                |
+|         [Conectar]    [Excluir]                |
+|                                                |
++------------------------------------------------+
+
+DEPOIS (Layout Horizontal Compacto):
++------------------------------------------------+
+|  [ICONE]  |  Atendimento          [Conectar]   |
+|   amber   |  Aguardando conexao   [Excluir]    |
++------------------------------------------------+
 ```
 
 ---
 
-## Novos Estados
-
-### 1. ESTADO INICIAL (offline) - Sem nenhuma instancia
-- Card com icone WhatsApp cinza
-- Badge "Desconectado"
-- Botao "Adicionar WhatsApp"
-- Ao clicar: Abre Modal 1
-
-### 2. MODAL 1: Nome da Instancia (sem mudancas)
-- Input para nome da instancia
-- Botao "Criar Instancia" (mudanca de label)
-- Ao clicar: Cria instancia e fecha modal
-- Depois: Vai para Estado Pendente (NAO abre QR automaticamente)
-
-### 3. ESTADO PENDENTE (novo) - Instancia criada, nao conectada
-- Card com nome da instancia
-- Badge "Aguardando Conexao" (amarelo)
-- Botao "Conectar" (verde)
-- Ao clicar: Abre Modal 2 (QR Code)
-- Botao secundario "Excluir" (vermelho outline)
-
-### 4. MODAL 2: QR Code (sem mudancas na logica)
-- QR Code com timer de 30s
-- Progress bar
-- Polling de status a cada 2s
-- Ao detectar conexao: Fecha modal, vai para Estado Conectado
-
-### 5. ESTADO CONECTADO (connected) - Igual ao atual
-- Card verde "Sistema Online"
-- Informacoes da instancia
-- Botao "Desconectar"
-
----
-
-## Mudancas no Tipo de Estado
-
-```typescript
-// Antes
-type ConnectionState = "loading" | "offline" | "connected";
-
-// Depois
-type ConnectionState = "loading" | "offline" | "pending" | "connected";
-```
-
----
-
-## Logica de Determinacao do Estado
-
-```typescript
-useEffect(() => {
-  if (loadingInstances) {
-    setConnectionState("loading");
-    return;
-  }
-
-  if (instancesData?.instances?.length > 0) {
-    const instance = instancesData.instances[0];
-    setInstanceData(instance);
-
-    if (instance.pastorini_status === "CONNECTED" || instance.pastorini_status === "open") {
-      setConnectionState("connected");
-    } else {
-      // Nova logica: instancia existe mas nao conectada = pending
-      setConnectionState("pending");
-    }
-  } else {
-    setConnectionState("offline");
-  }
-}, [instancesData, loadingInstances]);
-```
-
----
-
-## Novo Componente: Estado Pendente
+## Novo Codigo para o Estado Pending
 
 ```typescript
 {connectionState === "pending" && instanceData && (
-  <GlassCard className="flex flex-col items-center justify-center py-12 px-8">
-    <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center mb-6">
-      <MessageCircle className="w-10 h-10 text-amber-500" />
-    </div>
+  <GlassCard className="p-4 sm:p-6">
+    <div className="flex items-center justify-between gap-4">
+      {/* Left: Icon + Info */}
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+          <MessageCircle className="w-6 h-6 text-amber-500" />
+        </div>
+        
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-semibold text-foreground">
+              {instanceData.company_name}
+            </h3>
+            <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs">
+              Aguardando Conexao
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Clique em Conectar para escanear o QR Code
+          </p>
+        </div>
+      </div>
 
-    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 mb-4">
-      Aguardando Conexao
-    </Badge>
-
-    <h2 className="text-xl font-semibold text-foreground mb-2">
-      {instanceData.company_name}
-    </h2>
-    <p className="text-muted-foreground text-center mb-8 max-w-md">
-      Sua instancia foi criada. Clique em "Conectar" para escanear o QR Code
-      e vincular seu WhatsApp.
-    </p>
-
-    <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
-      <Button
-        onClick={handleOpenQrModal}
-        size="lg"
-        className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500"
-      >
-        <QrCode className="w-5 h-5 mr-2" />
-        Conectar
-      </Button>
-      
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="outline" size="lg" className="text-destructive border-destructive/50">
-            <X className="w-5 h-5 mr-2" />
-            Excluir
-          </Button>
-        </AlertDialogTrigger>
-        {/* Confirmacao de exclusao */}
-      </AlertDialog>
+      {/* Right: Actions */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <Button
+          onClick={handleOpenQrModal}
+          size="sm"
+          className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white"
+        >
+          <QrCode className="w-4 h-4 mr-2" />
+          Conectar
+        </Button>
+        
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="text-destructive hover:bg-destructive/10"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </AlertDialogTrigger>
+          {/* ... AlertDialog content permanece igual ... */}
+        </AlertDialog>
+      </div>
     </div>
   </GlassCard>
 )}
@@ -142,124 +101,32 @@ useEffect(() => {
 
 ---
 
-## Modificacao do Modal 1
+## Mudancas Principais
 
-Mudanca no botao:
-- Antes: "Gerar QR Code"
-- Depois: "Criar Instancia"
-
-Mudanca no comportamento:
-```typescript
-const handleCreateInstance = async () => {
-  // ... validacao e criacao ...
-  
-  setInstanceData(data.instance);
-  queryClient.invalidateQueries({ queryKey: ["user-instances"] });
-  
-  // Fechar Modal 1 e ir para estado PENDING (nao abre QR)
-  setIsNameModalOpen(false);
-  setConnectionState("pending");
-  
-  // NÃO abre o modal do QR automaticamente
-  // O usuario clicara em "Conectar" no card
-  
-  toast.success("Instancia criada!", {
-    description: "Clique em Conectar para vincular seu WhatsApp.",
-  });
-};
-```
+| Aspecto | Antes | Depois |
+|---------|-------|--------|
+| Layout | Vertical centralizado | Horizontal flexbox |
+| Padding | `py-12 px-8` | `p-4 sm:p-6` |
+| Icone | `w-20 h-20` | `w-12 h-12` |
+| Badge | Separado em linha propria | Inline com titulo |
+| Texto | Paragrafo longo | Uma linha curta |
+| Botao Excluir | Botao com texto | Icone apenas |
+| Altura Total | ~300px | ~80px |
 
 ---
 
-## Nova Funcao: Abrir Modal QR
+## Responsividade
 
-```typescript
-const handleOpenQrModal = async () => {
-  if (!instanceData?.pastorini_id) return;
-  
-  setIsQrModalOpen(true);
-  setIsRefreshingQr(true);
-  setQrError(null);
-  
-  // Buscar QR Code
-  const qr = await fetchQrCodeWithRetry(instanceData.pastorini_id, 5);
-  setIsRefreshingQr(false);
-  
-  if (qr) {
-    setQrCode(qr);
-  } else {
-    setQrError("QR Code nao disponivel. Clique para tentar novamente.");
-  }
-};
-```
-
----
-
-## Modificacao do handleCancelQr
-
-Mudanca: Ao cancelar o modal do QR, NAO deleta a instancia, apenas fecha o modal e volta para estado pending.
-
-```typescript
-const handleCancelQr = async () => {
-  setIsQrModalOpen(false);
-  setQrCode(null);
-  setQrError(null);
-  setProgress(100);
-  setTimeLeft(30);
-  // Volta para pending, NAO deleta a instancia
-  setConnectionState("pending");
-};
-```
-
----
-
-## Nova Funcao: Excluir Instancia
-
-```typescript
-const handleDeleteInstance = async () => {
-  if (!instanceData?.pastorini_id) return;
-  
-  try {
-    await supabase.functions.invoke("manage-instance", {
-      body: { action: "delete", instance_id: instanceData.pastorini_id },
-    });
-    
-    setInstanceData(null);
-    setInstanceName("");
-    setConnectionState("offline");
-    queryClient.invalidateQueries({ queryKey: ["user-instances"] });
-    
-    toast.success("Instancia excluida", {
-      description: "A instancia foi removida com sucesso.",
-    });
-  } catch (error: any) {
-    toast.error("Erro ao excluir", {
-      description: error.message || "Tente novamente.",
-    });
-  }
-};
-```
-
----
-
-## Resumo das Modificacoes
-
-| Item | Mudanca |
-|------|---------|
-| `ConnectionState` | Adicionar estado `"pending"` |
-| `handleCreateInstance` | Nao abre QR automaticamente, vai para pending |
-| `handleCancelQr` | Nao deleta instancia, volta para pending |
-| `handleOpenQrModal` | Nova funcao para abrir QR do estado pending |
-| `handleDeleteInstance` | Nova funcao para excluir do estado pending |
-| Modal 1 botao | "Gerar QR Code" → "Criar Instancia" |
-| UI | Novo card para estado pending |
+Em telas pequenas (mobile):
+- O layout continuara horizontal mas os botoes podem empilhar se necessario
+- Usa `gap-4` para espacamento adequado
+- `flex-shrink-0` nos elementos que nao devem encolher
 
 ---
 
 ## Arquivo a Modificar
 
-| Arquivo | Acao |
-|---------|------|
-| `src/pages/Integration.tsx` | Modificar logica de estados e adicionar estado pending |
-
+| Arquivo | Linhas | Acao |
+|---------|--------|------|
+| `src/pages/Integration.tsx` | 415-478 | Substituir bloco do estado pending |
 
