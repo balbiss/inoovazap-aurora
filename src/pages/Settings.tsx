@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClinicSettings } from "@/components/settings/ClinicSettings";
 import { IntegrationSettings } from "@/components/settings/IntegrationSettings";
 import { InsuranceSettings } from "@/components/settings/InsuranceSettings";
+import { PublicBookingSettings } from "@/components/settings/PublicBookingSettings";
 
 export default function Settings() {
   return (
@@ -26,6 +27,12 @@ export default function Settings() {
             Clínica
           </TabsTrigger>
           <TabsTrigger 
+            value="booking"
+            className="data-[state=active]:bg-white data-[state=active]:text-teal-700 data-[state=active]:shadow-sm"
+          >
+            Agendamento Online
+          </TabsTrigger>
+          <TabsTrigger 
             value="insurance"
             className="data-[state=active]:bg-white data-[state=active]:text-teal-700 data-[state=active]:shadow-sm"
           >
@@ -35,12 +42,16 @@ export default function Settings() {
             value="integration"
             className="data-[state=active]:bg-white data-[state=active]:text-teal-700 data-[state=active]:shadow-sm"
           >
-            Integração WhatsApp
+            WhatsApp
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="clinic" className="mt-6">
           <ClinicSettings />
+        </TabsContent>
+
+        <TabsContent value="booking" className="mt-6">
+          <PublicBookingSettings />
         </TabsContent>
 
         <TabsContent value="insurance" className="mt-6">
