@@ -40,7 +40,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-type ConnectionState = "loading" | "offline" | "connected";
+type ConnectionState = "loading" | "offline" | "pending" | "connected";
 
 interface InstanceData {
   id: string;
@@ -119,7 +119,8 @@ export default function Integration() {
       if (instance.pastorini_status === "CONNECTED" || instance.pastorini_status === "open") {
         setConnectionState("connected");
       } else {
-        setConnectionState("offline");
+        // Instância existe mas não conectada = pending
+        setConnectionState("pending");
       }
     } else {
       setConnectionState("offline");
@@ -245,57 +246,74 @@ export default function Integration() {
       setInstanceData(data.instance);
       queryClient.invalidateQueries({ queryKey: ["user-instances"] });
       
-      // Close Modal 1 and open Modal 2
+      // Fechar Modal 1 e ir para estado PENDING (não abre QR automaticamente)
       setIsNameModalOpen(false);
-      setIsQrModalOpen(true);
+      setConnectionState("pending");
       
-      // If QR code was returned immediately, use it
-      if (data.qrCode) {
-        setQrCode(data.qrCode);
-      } else {
-        // Otherwise, try to fetch with retry
-        setIsRefreshingQr(true);
-        const qr = await fetchQrCodeWithRetry(data.instance.pastorini_id, 5);
-        setIsRefreshingQr(false);
-        
-        if (qr) {
-          setQrCode(qr);
-        } else {
-          setQrError("QR Code ainda não disponível. Clique para tentar novamente.");
-        }
-      }
+      toast.success("Instância criada!", {
+        description: "Clique em Conectar para vincular seu WhatsApp.",
+      });
       
     } catch (error: any) {
       toast.error("Erro ao criar instância", {
         description: error.message || "Tente novamente mais tarde.",
       });
-      setIsCreating(false);
     } finally {
       setIsCreating(false);
     }
   };
 
-  const handleCancelQr = async () => {
-    setIsQrModalOpen(false);
+  // Função para abrir modal do QR a partir do estado pending
+  const handleOpenQrModal = async () => {
+    if (!instanceData?.pastorini_id) return;
     
-    // Delete the instance if canceling
-    if (instanceData?.pastorini_id) {
-      try {
-        await supabase.functions.invoke("manage-instance", {
-          body: { action: "delete", instance_id: instanceData.pastorini_id },
-        });
-        queryClient.invalidateQueries({ queryKey: ["user-instances"] });
-      } catch (error) {
-        console.error("Error deleting instance:", error);
-      }
-    }
-    
-    // Reset states
-    setInstanceData(null);
-    setQrCode(null);
-    setInstanceName("");
+    setIsQrModalOpen(true);
+    setIsRefreshingQr(true);
     setQrError(null);
-    setConnectionState("offline");
+    
+    const qr = await fetchQrCodeWithRetry(instanceData.pastorini_id, 5);
+    setIsRefreshingQr(false);
+    
+    if (qr) {
+      setQrCode(qr);
+    } else {
+      setQrError("QR Code não disponível. Clique para tentar novamente.");
+    }
+  };
+
+  // Cancelar modal QR - volta para pending (não deleta instância)
+  const handleCancelQr = () => {
+    setIsQrModalOpen(false);
+    setQrCode(null);
+    setQrError(null);
+    setProgress(100);
+    setTimeLeft(30);
+    // Volta para pending, NÃO deleta a instância
+    setConnectionState("pending");
+  };
+
+  // Excluir instância do estado pending
+  const handleDeleteInstance = async () => {
+    if (!instanceData?.pastorini_id) return;
+    
+    try {
+      await supabase.functions.invoke("manage-instance", {
+        body: { action: "delete", instance_id: instanceData.pastorini_id },
+      });
+      
+      setInstanceData(null);
+      setInstanceName("");
+      setConnectionState("offline");
+      queryClient.invalidateQueries({ queryKey: ["user-instances"] });
+      
+      toast.success("Instância excluída", {
+        description: "A instância foi removida com sucesso.",
+      });
+    } catch (error: any) {
+      toast.error("Erro ao excluir", {
+        description: error.message || "Tente novamente.",
+      });
+    }
   };
 
   const handleDisconnect = async () => {
@@ -390,6 +408,73 @@ export default function Integration() {
               <Plus className="w-5 h-5" />
               <span>Adicionar WhatsApp</span>
             </Button>
+          </GlassCard>
+        )}
+
+        {/* Pending State - Instance created, awaiting connection */}
+        {connectionState === "pending" && instanceData && (
+          <GlassCard className="flex flex-col items-center justify-center py-12 px-8">
+            <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center mb-6">
+              <MessageCircle className="w-10 h-10 text-amber-500" />
+            </div>
+
+            <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 mb-4">
+              Aguardando Conexão
+            </Badge>
+
+            <h2 className="text-xl font-semibold text-foreground mb-2">
+              {instanceData.company_name}
+            </h2>
+            <p className="text-muted-foreground text-center mb-8 max-w-md">
+              Sua instância foi criada. Clique em "Conectar" para escanear o QR Code
+              e vincular seu WhatsApp.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+              <Button
+                onClick={handleOpenQrModal}
+                size="lg"
+                className={cn(
+                  "flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600",
+                  "hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]",
+                  "text-white border-0"
+                )}
+              >
+                <QrCode className="w-5 h-5 mr-2" />
+                Conectar
+              </Button>
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                  >
+                    <X className="w-5 h-5 mr-2" />
+                    Excluir
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir instância?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação irá excluir a instância "{instanceData.company_name}". 
+                      Você precisará criar uma nova para conectar.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteInstance}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </GlassCard>
         )}
 
@@ -539,12 +624,12 @@ export default function Integration() {
               {isCreating ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Gerando...
+                  Criando...
                 </>
               ) : (
                 <>
-                  <QrCode className="w-4 h-4 mr-2" />
-                  Gerar QR Code
+                  <Plus className="w-4 h-4 mr-2" />
+                  Criar Instância
                 </>
               )}
             </Button>
