@@ -14,6 +14,15 @@ import {
 } from "@/components/ui/dialog";
 import { useCreatePatient, useUpdatePatient, Patient, PatientInput } from "@/hooks/usePatients";
 
+// CPF mask helper
+function formatCPF(value: string): string {
+  const numbers = value.replace(/\D/g, "").slice(0, 11);
+  if (numbers.length <= 3) return numbers;
+  if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+  if (numbers.length <= 9) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+  return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9)}`;
+}
+
 interface PatientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -25,13 +34,15 @@ export function PatientDialog({ open, onOpenChange, patient, onSuccess }: Patien
   const isEditing = !!patient;
   const createPatient = useCreatePatient();
   const updatePatient = useUpdatePatient();
+  const [cpfValue, setCpfValue] = useState(patient?.cpf ? formatCPF(patient.cpf) : "");
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<PatientInput>({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<PatientInput>({
     defaultValues: patient ? {
       name: patient.name || "",
       phone: patient.phone || "",
       email: patient.email || "",
       birth_date: patient.birth_date || "",
+      cpf: patient.cpf || "",
       health_insurance: patient.health_insurance || "",
       notes: patient.notes || "",
     } : {
@@ -39,10 +50,17 @@ export function PatientDialog({ open, onOpenChange, patient, onSuccess }: Patien
       phone: "",
       email: "",
       birth_date: "",
+      cpf: "",
       health_insurance: "",
       notes: "",
     },
   });
+
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCPF(e.target.value);
+    setCpfValue(formatted);
+    setValue("cpf", formatted.replace(/\D/g, ""));
+  };
 
   const onSubmit = async (data: PatientInput) => {
     try {
@@ -57,6 +75,7 @@ export function PatientDialog({ open, onOpenChange, patient, onSuccess }: Patien
       }
 
       reset();
+      setCpfValue("");
       onOpenChange(false);
       onSuccess?.(result);
     } catch (error: any) {
@@ -116,6 +135,18 @@ export function PatientDialog({ open, onOpenChange, patient, onSuccess }: Patien
               id="birth_date"
               type="date"
               {...register("birth_date")}
+            />
+          </div>
+
+          {/* CPF */}
+          <div className="space-y-2">
+            <Label htmlFor="cpf">CPF</Label>
+            <Input
+              id="cpf"
+              placeholder="000.000.000-00"
+              value={cpfValue}
+              onChange={handleCPFChange}
+              inputMode="numeric"
             />
           </div>
 
