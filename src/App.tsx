@@ -10,6 +10,7 @@ import WhatsApp from "./pages/WhatsApp";
 import Automacoes from "./pages/Automacoes";
 import Perfil from "./pages/Perfil";
 import Brain from "./pages/Brain";
+import Integration from "./pages/Integration";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +34,7 @@ const App = () => (
                     <Route path="/whatsapp" element={<WhatsApp />} />
                     <Route path="/automacoes" element={<Automacoes />} />
                     <Route path="/brain" element={<Brain />} />
+                    <Route path="/integration" element={<Integration />} />
                     <Route path="/perfil" element={<Perfil />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
