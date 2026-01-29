@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          instance_id: string
+          name: string | null
+          notes: string | null
+          phone: string
+          profile_pic_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          instance_id: string
+          name?: string | null
+          notes?: string | null
+          phone: string
+          profile_pic_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          instance_id?: string
+          name?: string | null
+          notes?: string | null
+          phone?: string
+          profile_pic_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contacts_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       instances: {
         Row: {
           active: boolean | null
