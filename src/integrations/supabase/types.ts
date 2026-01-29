@@ -264,7 +264,47 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_public_booking: {
+        Args: {
+          p_doctor_id: string
+          p_end_time: string
+          p_instance_id: string
+          p_notes?: string
+          p_patient_name: string
+          p_patient_phone: string
+          p_start_time: string
+        }
+        Returns: string
+      }
+      get_busy_slots: {
+        Args: { p_date: string; p_doctor_id: string }
+        Returns: {
+          end_time: string
+          start_time: string
+        }[]
+      }
+      get_clinic_by_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          clinic_config: Json
+          company_name: string
+          id: string
+          public_booking_active: boolean
+          schedule_config: Json
+        }[]
+      }
+      get_public_doctors: {
+        Args: { p_instance_id: string }
+        Returns: {
+          avatar_url: string
+          color: string
+          default_duration: number
+          id: string
+          name: string
+          schedule_config: Json
+          specialty: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
