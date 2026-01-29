@@ -125,7 +125,8 @@ export default function PublicBooking() {
     if (!selectedDoctor || !selectedDate) return [];
 
     const config = selectedDoctor.schedule_config;
-    const duration = clinic?.clinic_config?.slot_duration || selectedDoctor.default_duration || 30;
+    // Priority: doctor's default_duration > clinic's slot_duration > fallback 30
+    const duration = selectedDoctor.default_duration || clinic?.clinic_config?.slot_duration || 30;
     const slots: string[] = [];
 
     const [openH, openM] = config.hours.open.split(":").map(Number);
@@ -138,38 +139,41 @@ export default function PublicBooking() {
 
     while (currentH < closeH || (currentH === closeH && currentM < closeM)) {
       const currentMinutes = currentH * 60 + currentM;
+      const slotEndMinutes = currentMinutes + duration;
       const lunchStart = lunchStartH * 60 + lunchStartM;
       const lunchEnd = lunchEndH * 60 + lunchEndM;
       const closeMinutes = closeH * 60 + closeM;
 
       // Skip if slot would extend past closing
-      if (currentMinutes + duration > closeMinutes) break;
+      if (slotEndMinutes > closeMinutes) break;
 
-      // Skip lunch time
-      if (currentMinutes >= lunchStart && currentMinutes < lunchEnd) {
-        currentM += duration;
-        if (currentM >= 60) {
-          currentH += Math.floor(currentM / 60);
-          currentM = currentM % 60;
-        }
+      // Skip if slot overlaps with lunch time
+      if (currentMinutes < lunchEnd && slotEndMinutes > lunchStart) {
+        // Jump to end of lunch
+        currentH = lunchEndH;
+        currentM = lunchEndM;
         continue;
       }
 
       const timeStr = `${currentH.toString().padStart(2, "0")}:${currentM.toString().padStart(2, "0")}`;
       
-      // Check if slot is busy
+      // Build slot start and end times for overlap check
+      const slotStart = new Date(selectedDate);
+      slotStart.setHours(currentH, currentM, 0, 0);
+      const slotEnd = new Date(slotStart);
+      slotEnd.setMinutes(slotEnd.getMinutes() + duration);
+
+      // Check if slot overlaps with any busy slot
       const isBusy = busySlots?.some((b) => {
         const busyStart = new Date(b.start_time);
-        const slotTime = new Date(selectedDate);
-        slotTime.setHours(currentH, currentM, 0, 0);
-        return busyStart.getTime() === slotTime.getTime();
+        const busyEnd = new Date(b.end_time);
+        // Overlap: slot starts before busy ends AND slot ends after busy starts
+        return slotStart < busyEnd && slotEnd > busyStart;
       });
 
       // Check if slot is in the past
       const now = new Date();
-      const slotDateTime = new Date(selectedDate);
-      slotDateTime.setHours(currentH, currentM, 0, 0);
-      const isPast = isBefore(slotDateTime, now);
+      const isPast = isBefore(slotStart, now);
 
       if (!isBusy && !isPast) {
         slots.push(timeStr);
