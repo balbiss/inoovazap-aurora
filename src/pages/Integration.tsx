@@ -483,101 +483,63 @@ export default function Integration() {
 
         {/* Connected State */}
         {connectionState === "connected" && instanceData && (
-          <GlassCard className="p-8">
-            {/* Success header */}
-            <div className="flex flex-col items-center mb-8">
-              <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4 success-glow">
-                <CheckCircle2 className="w-10 h-10 text-emerald-500" />
-              </div>
-              <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 mb-2">
-                Sistema Online
-              </Badge>
-              <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-                SISTEMA OPERACIONAL
-              </h2>
-            </div>
-
-            {/* Info grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              <div className="glass-card p-4 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <MessageCircle className="w-5 h-5 text-primary" />
+          <GlassCard className="p-4 sm:p-6">
+            <div className="flex items-center justify-between gap-4">
+              {/* Left: Icon + Info */}
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 success-glow">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                </div>
+                
+                <div>
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h3 className="font-semibold text-foreground">
+                      {instanceData.company_name}
+                    </h3>
+                    <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
+                      Conectado
+                    </Badge>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Nome da Instância</p>
-                    <p className="font-medium text-foreground">
-                      {instanceData.company_name || "Atendimento"}
-                    </p>
-                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {formatPhoneNumber(statusData?.phoneNumber || instanceData?.phone_number || "WhatsApp ativo")}
+                  </p>
                 </div>
               </div>
 
-              <div className="glass-card p-4 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                    <Smartphone className="w-5 h-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Número Conectado</p>
-                    <p className="font-medium text-foreground">
-                      {formatPhoneNumber(statusData?.phoneNumber || instanceData?.phone_number || "")}
-                    </p>
-                  </div>
-                </div>
+              {/* Right: Actions */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Desconectar
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Desconectar WhatsApp?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação irá desconectar seu WhatsApp da plataforma. Você poderá
+                        conectar novamente a qualquer momento.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDisconnect}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Desconectar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
-
-            {/* Webhook status */}
-            <div className="glass-card p-4 rounded-xl mb-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                    <Zap className="w-5 h-5 text-amber-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Webhook</p>
-                    <p className="font-medium text-foreground text-sm truncate max-w-[200px] md:max-w-none">
-                      Configurado automaticamente
-                    </p>
-                  </div>
-                </div>
-                <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                  Ativo ⚡
-                </Badge>
-              </div>
-            </div>
-
-            {/* Disconnect button */}
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full text-destructive border-destructive/50 hover:bg-destructive/10 hover:border-destructive"
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Desconectar Instância
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Desconectar WhatsApp?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação irá desconectar seu WhatsApp da plataforma. Você poderá
-                    conectar novamente a qualquer momento.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDisconnect}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Desconectar
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
           </GlassCard>
         )}
       </div>
