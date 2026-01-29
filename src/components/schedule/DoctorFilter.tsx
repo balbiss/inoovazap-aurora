@@ -20,7 +20,7 @@ export function DoctorFilter({ value, onChange }: DoctorFilterProps) {
       value={value || "all"}
       onValueChange={(v) => onChange(v === "all" ? undefined : v)}
     >
-      <SelectTrigger className="w-[220px]">
+      <SelectTrigger className="w-[220px] border-slate-200">
         <SelectValue placeholder="Filtrar por profissional" />
       </SelectTrigger>
       <SelectContent>

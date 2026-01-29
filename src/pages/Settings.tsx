@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { NeonText } from "@/components/ui/NeonText";
-import { GlassCard } from "@/components/ui/GlassCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClinicSettings } from "@/components/settings/ClinicSettings";
 import { IntegrationSettings } from "@/components/settings/IntegrationSettings";
@@ -10,19 +7,29 @@ export default function Settings() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <NeonText as="h1" className="text-3xl md:text-4xl" glow={false}>
+        <h1 className="text-2xl md:text-3xl font-semibold text-slate-800">
           Configurações
-        </NeonText>
-        <p className="text-muted-foreground text-lg">
+        </h1>
+        <p className="text-slate-500 text-sm mt-1">
           Gerencie as configurações da sua clínica
         </p>
       </div>
 
       {/* Tabs */}
       <Tabs defaultValue="clinic" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="clinic">Clínica</TabsTrigger>
-          <TabsTrigger value="integration">Integração WhatsApp</TabsTrigger>
+        <TabsList className="bg-slate-100 p-1 rounded-lg">
+          <TabsTrigger 
+            value="clinic" 
+            className="data-[state=active]:bg-white data-[state=active]:text-teal-700 data-[state=active]:shadow-sm"
+          >
+            Clínica
+          </TabsTrigger>
+          <TabsTrigger 
+            value="integration"
+            className="data-[state=active]:bg-white data-[state=active]:text-teal-700 data-[state=active]:shadow-sm"
+          >
+            Integração WhatsApp
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="clinic" className="mt-6">

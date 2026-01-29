@@ -9,7 +9,7 @@ interface LayoutWrapperProps {
 
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
   return (
-    <div className="min-h-screen bg-gradient-dark">
+    <div className="min-h-screen bg-slate-50">
       {/* Desktop Sidebar - Hidden on mobile */}
       <div className="hidden md:block">
         <Sidebar />
@@ -21,7 +21,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       </div>
 
       {/* Main Content */}
-      <main className="pt-20 pb-24 px-4 md:pt-0 md:pb-0 md:ml-64 md:p-8">
+      <main className="pt-16 pb-20 px-4 md:pt-0 md:pb-0 md:ml-64 md:p-8">
         {children}
       </main>
 

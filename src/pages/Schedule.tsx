@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { format, addDays, subDays, startOfWeek, addWeeks, subWeeks } from "date-fns";
+import { format, addDays, startOfWeek, addWeeks, subWeeks } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { NeonText } from "@/components/ui/NeonText";
 import { ScheduleGrid } from "@/components/schedule/ScheduleGrid";
 import { DoctorFilter } from "@/components/schedule/DoctorFilter";
 import { NewAppointmentDialog } from "@/components/schedule/NewAppointmentDialog";
@@ -28,17 +27,17 @@ export default function Schedule() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <NeonText as="h1" className="text-3xl md:text-4xl" glow={false}>
+          <h1 className="text-2xl md:text-3xl font-semibold text-slate-800">
             Agenda
-          </NeonText>
-          <p className="text-muted-foreground text-lg">
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">
             Gerencie os agendamentos da clínica
           </p>
         </div>
 
         <Button
           onClick={() => setIsNewAppointmentOpen(true)}
-          className="bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white"
+          className="bg-teal-600 hover:bg-teal-700 text-white"
         >
           <Plus className="w-4 h-4 mr-2" />
           Novo Agendamento
@@ -49,19 +48,19 @@ export default function Schedule() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Date Navigation */}
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={handlePrevWeek}>
+          <Button variant="outline" size="icon" onClick={handlePrevWeek} className="border-slate-200">
             <ChevronLeft className="w-4 h-4" />
           </Button>
           
-          <Button variant="outline" onClick={handleToday} className="px-4">
+          <Button variant="outline" onClick={handleToday} className="px-4 border-slate-200">
             Hoje
           </Button>
           
-          <Button variant="outline" size="icon" onClick={handleNextWeek}>
+          <Button variant="outline" size="icon" onClick={handleNextWeek} className="border-slate-200">
             <ChevronRight className="w-4 h-4" />
           </Button>
 
-          <span className="text-sm text-muted-foreground ml-2 hidden md:inline">
+          <span className="text-sm text-slate-600 ml-2 hidden md:inline font-medium">
             {formattedWeek}
           </span>
         </div>
@@ -74,7 +73,7 @@ export default function Schedule() {
       </div>
 
       {/* Mobile Date Display */}
-      <p className="text-sm text-muted-foreground md:hidden text-center">
+      <p className="text-sm text-slate-600 md:hidden text-center font-medium">
         {formattedWeek}
       </p>
 

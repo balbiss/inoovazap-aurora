@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, Loader2, Sparkles } from "lucide-react";
+import { Mail, Lock, Loader2, Heart } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -17,7 +17,6 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session?.user) {
@@ -27,7 +26,6 @@ const Auth = () => {
       }
     );
 
-    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         navigate("/", { replace: true });
@@ -143,8 +141,8 @@ const Auth = () => {
 
   if (checkingSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
       </div>
     );
   }
@@ -152,69 +150,70 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Decorative (Hidden on Mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Animated Gradient Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900">
-          {/* Animated Orbs */}
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-float" />
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-float" style={{ animationDelay: "1s" }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl animate-glow-pulse" />
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-teal-600 to-teal-800">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-20 w-40 h-40 border-4 border-white rounded-full" />
+          <div className="absolute bottom-40 right-20 w-60 h-60 border-4 border-white rounded-full" />
+          <div className="absolute top-1/2 left-1/3 w-32 h-32 border-4 border-white rounded-full" />
         </div>
         
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center justify-center w-full px-12">
           <div className="text-center space-y-6">
-            <Sparkles className="h-16 w-16 text-cyan-400 mx-auto animate-glow-pulse" />
+            <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto">
+              <Heart className="h-12 w-12 text-white" />
+            </div>
             <h1 className="text-4xl xl:text-5xl font-light text-white leading-tight">
-              O Futuro do
+              Gestão de Clínicas
               <br />
-              <span className="font-bold text-gradient-neon">
-                Atendimento Inteligente
-              </span>
+              <span className="font-bold">Simplificada</span>
             </h1>
             <div className="flex items-center justify-center gap-3 pt-4">
-              <div className="h-px w-12 bg-gradient-to-r from-transparent to-cyan-500" />
-              <span className="text-2xl font-bold neon-text">InoovaZap</span>
-              <div className="h-px w-12 bg-gradient-to-l from-transparent to-cyan-500" />
+              <div className="h-px w-12 bg-white/50" />
+              <span className="text-2xl font-bold text-white">InoovaSaúde</span>
+              <div className="h-px w-12 bg-white/50" />
             </div>
-            <p className="text-muted-foreground text-lg max-w-md mx-auto">
-              Automatize conversas, aumente vendas e encante seus clientes com inteligência artificial.
+            <p className="text-teal-100 text-lg max-w-md mx-auto">
+              Agende consultas, gerencie pacientes e organize sua clínica em um só lugar.
             </p>
           </div>
         </div>
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-background">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-slate-50">
         <div className="w-full max-w-md">
-          {/* Glass Card */}
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
+          {/* Card */}
+          <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
             {/* Mobile Logo */}
             <div className="lg:hidden text-center mb-8">
-              <Sparkles className="h-10 w-10 text-cyan-400 mx-auto mb-3" />
-              <h2 className="text-xl font-bold neon-text">InoovaZap</h2>
+              <div className="w-12 h-12 bg-teal-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <Heart className="h-7 w-7 text-white" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-800">InoovaSaúde</h2>
             </div>
 
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-light text-white mb-2">
+              <h2 className="text-2xl font-semibold text-slate-800 mb-2">
                 Acesse sua Conta
               </h2>
-              <p className="text-muted-foreground text-sm">
-                Entre para gerenciar seu atendimento inteligente
+              <p className="text-slate-500 text-sm">
+                Entre para gerenciar sua clínica
               </p>
             </div>
 
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 rounded-xl p-1 mb-6">
+              <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1 rounded-lg mb-6">
                 <TabsTrigger 
                   value="login" 
-                  className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-violet-600 data-[state=active]:text-white transition-all"
+                  className="rounded-md data-[state=active]:bg-white data-[state=active]:text-teal-700 data-[state=active]:shadow-sm transition-all"
                 >
                   Entrar
                 </TabsTrigger>
                 <TabsTrigger 
                   value="signup"
-                  className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-violet-600 data-[state=active]:text-white transition-all"
+                  className="rounded-md data-[state=active]:bg-white data-[state=active]:text-teal-700 data-[state=active]:shadow-sm transition-all"
                 >
                   Cadastrar
                 </TabsTrigger>
@@ -223,35 +222,35 @@ const Auth = () => {
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-5">
                   <div className="space-y-2">
-                    <Label htmlFor="email-login" className="text-muted-foreground text-sm">
+                    <Label htmlFor="email-login" className="text-slate-700 text-sm">
                       Email
                     </Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input
                         id="email-login"
                         type="email"
                         placeholder="seu@email.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10 bg-slate-900/50 border-white/10 text-white placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
+                        className="pl-10 border-slate-200 focus:ring-teal-500 focus:border-teal-500"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="password-login" className="text-muted-foreground text-sm">
+                    <Label htmlFor="password-login" className="text-slate-700 text-sm">
                       Senha
                     </Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input
                         id="password-login"
                         type="password"
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10 bg-slate-900/50 border-white/10 text-white placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
+                        className="pl-10 border-slate-200 focus:ring-teal-500 focus:border-teal-500"
                       />
                     </div>
                   </div>
@@ -259,7 +258,7 @@ const Auth = () => {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40"
+                    className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2.5 rounded-lg transition-colors"
                   >
                     {loading ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
@@ -273,35 +272,35 @@ const Auth = () => {
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-5">
                   <div className="space-y-2">
-                    <Label htmlFor="email-signup" className="text-muted-foreground text-sm">
+                    <Label htmlFor="email-signup" className="text-slate-700 text-sm">
                       Email
                     </Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input
                         id="email-signup"
                         type="email"
                         placeholder="seu@email.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10 bg-slate-900/50 border-white/10 text-white placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
+                        className="pl-10 border-slate-200 focus:ring-teal-500 focus:border-teal-500"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="password-signup" className="text-muted-foreground text-sm">
+                    <Label htmlFor="password-signup" className="text-slate-700 text-sm">
                       Senha
                     </Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input
                         id="password-signup"
                         type="password"
                         placeholder="Mínimo 6 caracteres"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10 bg-slate-900/50 border-white/10 text-white placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
+                        className="pl-10 border-slate-200 focus:ring-teal-500 focus:border-teal-500"
                       />
                     </div>
                   </div>
@@ -309,7 +308,7 @@ const Auth = () => {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40"
+                    className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2.5 rounded-lg transition-colors"
                   >
                     {loading ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
@@ -324,10 +323,10 @@ const Auth = () => {
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/10" />
+                <div className="w-full border-t border-slate-200" />
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-card px-3 text-muted-foreground">
+                <span className="bg-white px-3 text-slate-500">
                   ou continue com
                 </span>
               </div>
@@ -339,23 +338,23 @@ const Auth = () => {
               variant="outline"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20 rounded-xl py-3 transition-all"
+              className="w-full border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg py-2.5 transition-colors"
             >
               <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
                 <path
-                  fill="currentColor"
+                  fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                 />
                 <path
-                  fill="currentColor"
+                  fill="#34A853"
                   d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
                 />
                 <path
-                  fill="currentColor"
+                  fill="#FBBC05"
                   d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
                 />
                 <path
-                  fill="currentColor"
+                  fill="#EA4335"
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
@@ -364,13 +363,13 @@ const Auth = () => {
           </div>
 
           {/* Footer */}
-          <p className="text-center text-muted-foreground text-xs mt-6">
+          <p className="text-center text-slate-500 text-xs mt-6">
             Ao continuar, você concorda com nossos{" "}
-            <a href="#" className="text-primary hover:underline">
+            <a href="#" className="text-teal-600 hover:underline">
               Termos de Uso
             </a>{" "}
             e{" "}
-            <a href="#" className="text-primary hover:underline">
+            <a href="#" className="text-teal-600 hover:underline">
               Política de Privacidade
             </a>
           </p>

@@ -2,8 +2,6 @@ import { useState } from "react";
 import { Plus, Users, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { NeonText } from "@/components/ui/NeonText";
-import { GlassCard } from "@/components/ui/GlassCard";
 import { PatientTable } from "@/components/patients/PatientTable";
 import { PatientDialog } from "@/components/patients/PatientDialog";
 import { usePatients, Patient } from "@/hooks/usePatients";
@@ -30,17 +28,17 @@ export default function Patients() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <NeonText as="h1" className="text-3xl md:text-4xl" glow={false}>
+          <h1 className="text-2xl md:text-3xl font-semibold text-slate-800">
             Pacientes
-          </NeonText>
-          <p className="text-muted-foreground text-lg">
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">
             Gerencie a base de pacientes da clínica
           </p>
         </div>
 
         <Button
           onClick={() => setIsDialogOpen(true)}
-          className="bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white"
+          className="bg-teal-600 hover:bg-teal-700 text-white"
         >
           <Plus className="w-4 h-4 mr-2" />
           Adicionar Paciente
@@ -49,32 +47,32 @@ export default function Patients() {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <Input
           placeholder="Buscar por nome, telefone ou email..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
+          className="pl-10 border-slate-200"
         />
       </div>
 
       {/* Patients Table */}
       {isLoading ? (
-        <GlassCard className="min-h-[300px] flex items-center justify-center">
-          <p className="text-muted-foreground">Carregando...</p>
-        </GlassCard>
+        <div className="bg-white rounded-lg border border-slate-200 shadow-sm min-h-[300px] flex items-center justify-center">
+          <p className="text-slate-500">Carregando...</p>
+        </div>
       ) : patients && patients.length > 0 ? (
         <PatientTable 
           patients={patients}
           onEdit={handleEdit}
         />
       ) : (
-        <GlassCard className="min-h-[300px] flex flex-col items-center justify-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-muted/30 flex items-center justify-center">
-            <Users className="w-8 h-8 text-muted-foreground" />
+        <div className="bg-white rounded-lg border border-slate-200 shadow-sm min-h-[300px] flex flex-col items-center justify-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+            <Users className="w-8 h-8 text-slate-400" />
           </div>
           <div className="text-center">
-            <p className="text-muted-foreground mb-2">
+            <p className="text-slate-500 mb-2">
               {searchQuery ? "Nenhum paciente encontrado" : "Nenhum paciente cadastrado"}
             </p>
             {!searchQuery && (
@@ -87,7 +85,7 @@ export default function Patients() {
               </Button>
             )}
           </div>
-        </GlassCard>
+        </div>
       )}
 
       {/* Patient Dialog */}

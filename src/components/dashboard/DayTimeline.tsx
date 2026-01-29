@@ -10,23 +10,23 @@ import { Badge } from "@/components/ui/badge";
 const statusConfig = {
   scheduled: {
     label: "Agendado",
-    className: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
+    className: "bg-sky-50 text-sky-700 border-sky-200",
   },
   confirmed: {
     label: "Confirmado",
-    className: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
   },
   completed: {
     label: "Concluído",
-    className: "bg-slate-500/20 text-slate-400 border-slate-500/30",
+    className: "bg-slate-100 text-slate-600 border-slate-200",
   },
   cancelled: {
     label: "Cancelado",
-    className: "bg-rose-500/20 text-rose-400 border-rose-500/30",
+    className: "bg-rose-50 text-rose-700 border-rose-200",
   },
   no_show: {
     label: "Falta",
-    className: "bg-rose-500/20 text-rose-400 border-rose-500/30",
+    className: "bg-rose-50 text-rose-700 border-rose-200",
   },
 };
 
@@ -39,17 +39,17 @@ function TimelineItem({ appointment }: TimelineItemProps) {
   const startTime = format(new Date(appointment.start_time), "HH:mm");
 
   return (
-    <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors">
+    <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0">
       {/* Time */}
       <div className="flex items-center gap-2 min-w-[70px]">
-        <Clock className="w-4 h-4 text-slate-500" />
-        <span className="text-sm font-medium text-white">{startTime}</span>
+        <Clock className="w-4 h-4 text-slate-400" />
+        <span className="text-sm font-semibold text-slate-700">{startTime}</span>
       </div>
 
       {/* Patient */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <User className="w-4 h-4 text-slate-500 flex-shrink-0" />
-        <span className="text-sm text-slate-300 truncate">
+        <User className="w-4 h-4 text-slate-400 flex-shrink-0" />
+        <span className="text-sm text-slate-700 truncate font-medium">
           {appointment.patient?.name || "Paciente não identificado"}
         </span>
       </div>
@@ -57,16 +57,15 @@ function TimelineItem({ appointment }: TimelineItemProps) {
       {/* Doctor */}
       <div className="hidden md:flex items-center gap-2 flex-1 min-w-0">
         <Stethoscope 
-          className="w-4 h-4 flex-shrink-0" 
-          style={{ color: appointment.doctor?.color || "#06b6d4" }}
+          className="w-4 h-4 flex-shrink-0 text-slate-400" 
         />
-        <span className="text-sm text-slate-400 truncate">
+        <span className="text-sm text-slate-600 truncate">
           {appointment.doctor?.name}
         </span>
       </div>
 
       {/* Status */}
-      <Badge className={cn("text-xs", status.className)}>
+      <Badge variant="outline" className={cn("text-xs font-medium", status.className)}>
         {status.label}
       </Badge>
     </div>
@@ -84,28 +83,28 @@ export function DayTimeline() {
   ) || [];
 
   return (
-    <div className="glass-card rounded-2xl p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white">Timeline de Hoje</h3>
+    <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+        <h3 className="text-base font-semibold text-slate-800">Timeline de Hoje</h3>
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={() => navigate("/schedule")}
-          className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+          className="text-teal-600 hover:text-teal-700 hover:bg-teal-50"
         >
           Ver Agenda
           <ArrowRight className="w-4 h-4 ml-1" />
         </Button>
       </div>
 
-      <div className="space-y-1">
+      <div className="p-2">
         {isLoading ? (
           <div className="text-center py-8">
-            <p className="text-slate-400">Carregando...</p>
+            <p className="text-slate-500">Carregando...</p>
           </div>
         ) : upcomingAppointments.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-slate-400">Nenhum agendamento para hoje</p>
+            <p className="text-slate-500">Nenhum agendamento para hoje</p>
           </div>
         ) : (
           upcomingAppointments.slice(0, 6).map((appointment) => (
@@ -115,9 +114,11 @@ export function DayTimeline() {
       </div>
 
       {upcomingAppointments.length > 6 && (
-        <p className="text-xs text-slate-500 text-center mt-4">
-          +{upcomingAppointments.length - 6} mais agendamentos
-        </p>
+        <div className="px-5 py-3 border-t border-slate-100">
+          <p className="text-xs text-slate-500 text-center">
+            +{upcomingAppointments.length - 6} mais agendamentos
+          </p>
+        </div>
       )}
     </div>
   );

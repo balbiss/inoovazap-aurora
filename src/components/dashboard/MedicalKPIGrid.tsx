@@ -7,21 +7,21 @@ interface MedicalKPICardProps {
   title: string;
   value: string | number;
   subtitle: string;
+  iconBgColor: string;
   iconColor: string;
-  iconBg: string;
 }
 
-function MedicalKPICard({ icon: Icon, title, value, subtitle, iconColor, iconBg }: MedicalKPICardProps) {
+function MedicalKPICard({ icon: Icon, title, value, subtitle, iconBgColor, iconColor }: MedicalKPICardProps) {
   return (
-    <div className="glass-card p-4 md:p-5 rounded-2xl min-w-[160px] flex-shrink-0 md:flex-shrink md:min-w-0">
-      <div className="flex items-start justify-between mb-3">
-        <div className={cn("p-2.5 rounded-xl", iconBg)}>
+    <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-5 min-w-[180px] flex-shrink-0 md:flex-shrink md:min-w-0">
+      <div className="flex items-start justify-between mb-4">
+        <div className={cn("p-3 rounded-full", iconBgColor)}>
           <Icon className={cn("w-5 h-5", iconColor)} />
         </div>
       </div>
       <div className="space-y-1">
-        <p className="text-2xl md:text-3xl font-bold text-white">{value}</p>
-        <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">{title}</p>
+        <p className="text-3xl font-bold text-slate-800">{value}</p>
+        <p className="text-sm font-medium text-slate-700">{title}</p>
         <p className="text-xs text-slate-500">{subtitle}</p>
       </div>
     </div>
@@ -37,32 +37,32 @@ export function MedicalKPIGrid() {
       title: "Pacientes Hoje",
       value: isLoading ? "..." : stats?.total || 0,
       subtitle: "agendamentos do dia",
-      iconColor: "text-cyan-400",
-      iconBg: "bg-cyan-500/20",
+      iconBgColor: "bg-teal-50",
+      iconColor: "text-teal-600",
     },
     {
       icon: CheckCircle,
       title: "Confirmados",
       value: isLoading ? "..." : stats?.confirmed || 0,
       subtitle: stats?.total ? `${Math.round((stats.confirmed / stats.total) * 100)}% do total` : "0%",
-      iconColor: "text-emerald-400",
-      iconBg: "bg-emerald-500/20",
+      iconBgColor: "bg-emerald-50",
+      iconColor: "text-emerald-600",
     },
     {
       icon: XCircle,
       title: "Faltas",
       value: isLoading ? "..." : stats?.noShow || 0,
       subtitle: "não compareceram",
-      iconColor: "text-rose-400",
-      iconBg: "bg-rose-500/20",
+      iconBgColor: "bg-rose-50",
+      iconColor: "text-rose-600",
     },
     {
       icon: UserPlus,
       title: "Novos Cadastros",
       value: isLoading ? "..." : stats?.newPatients || 0,
       subtitle: "esta semana",
-      iconColor: "text-amber-400",
-      iconBg: "bg-amber-500/20",
+      iconBgColor: "bg-amber-50",
+      iconColor: "text-amber-600",
     },
   ];
 
