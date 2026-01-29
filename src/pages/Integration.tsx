@@ -413,67 +413,70 @@ export default function Integration() {
 
         {/* Pending State - Instance created, awaiting connection */}
         {connectionState === "pending" && instanceData && (
-          <GlassCard className="flex flex-col items-center justify-center py-12 px-8">
-            <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center mb-6">
-              <MessageCircle className="w-10 h-10 text-amber-500" />
-            </div>
+          <GlassCard className="p-4 sm:p-6">
+            <div className="flex items-center justify-between gap-4">
+              {/* Left: Icon + Info */}
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <MessageCircle className="w-6 h-6 text-amber-500" />
+                </div>
+                
+                <div>
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h3 className="font-semibold text-foreground">
+                      {instanceData.company_name}
+                    </h3>
+                    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs">
+                      Aguardando Conexão
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Clique em Conectar para escanear o QR Code
+                  </p>
+                </div>
+              </div>
 
-            <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 mb-4">
-              Aguardando Conexão
-            </Badge>
-
-            <h2 className="text-xl font-semibold text-foreground mb-2">
-              {instanceData.company_name}
-            </h2>
-            <p className="text-muted-foreground text-center mb-8 max-w-md">
-              Sua instância foi criada. Clique em "Conectar" para escanear o QR Code
-              e vincular seu WhatsApp.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
-              <Button
-                onClick={handleOpenQrModal}
-                size="lg"
-                className={cn(
-                  "flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600",
-                  "hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]",
-                  "text-white border-0"
-                )}
-              >
-                <QrCode className="w-5 h-5 mr-2" />
-                Conectar
-              </Button>
-              
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="lg" 
-                    className="text-destructive border-destructive/50 hover:bg-destructive/10"
-                  >
-                    <X className="w-5 h-5 mr-2" />
-                    Excluir
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir instância?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta ação irá excluir a instância "{instanceData.company_name}". 
-                      Você precisará criar uma nova para conectar.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDeleteInstance}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              {/* Right: Actions */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Button
+                  onClick={handleOpenQrModal}
+                  size="sm"
+                  className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:from-emerald-600 hover:to-cyan-600"
+                >
+                  <QrCode className="w-4 h-4 mr-2" />
+                  Conectar
+                </Button>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-destructive hover:bg-destructive/10"
                     >
-                      Excluir
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir instância?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação irá excluir a instância "{instanceData.company_name}". 
+                        Você precisará criar uma nova para conectar.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteInstance}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
           </GlassCard>
         )}
