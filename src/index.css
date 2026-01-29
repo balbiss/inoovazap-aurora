@@ -50,15 +50,15 @@
     --danger: 0 84% 60%;
     --danger-light: 0 84% 95%;
 
-    /* Sidebar */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 215 25% 27%;
-    --sidebar-primary: 175 84% 32%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 175 84% 95%;
-    --sidebar-accent-foreground: 175 84% 32%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 175 84% 32%;
+    /* Sidebar - Tema Teal Escuro */
+    --sidebar-background: 175 43% 35%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 175 43% 35%;
+    --sidebar-accent: 0 0% 100%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 100%;
+    --sidebar-ring: 0 0% 100%;
   }
 }
 
@@ -80,9 +80,19 @@
     @apply bg-white rounded-lg border border-slate-200 shadow-sm;
   }
 
-  /* Clean Sidebar */
-  .clean-sidebar {
-    @apply bg-white border-r border-slate-200;
+  /* Sidebar Branded - Tema Teal */
+  .sidebar-branded {
+    @apply bg-teal-700;
+  }
+
+  /* Sidebar Active Item */
+  .sidebar-active {
+    @apply relative bg-white/15;
+  }
+
+  .sidebar-active::before {
+    content: '';
+    @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full bg-white;
   }
 
   /* Clean Bottom Nav */

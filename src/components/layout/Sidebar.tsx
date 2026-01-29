@@ -39,15 +39,15 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="clean-sidebar fixed left-0 top-0 h-screen w-64 flex flex-col z-50">
+    <aside className="sidebar-branded fixed left-0 top-0 h-screen w-64 flex flex-col z-50">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-6 border-b border-slate-200">
-        <div className="w-10 h-10 rounded-lg bg-teal-600 flex items-center justify-center">
+      <div className="flex items-center gap-3 px-6 py-6 border-b border-white/10">
+        <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
           <Heart className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h1 className="text-lg font-bold text-slate-800">InoovaSaúde</h1>
-          <p className="text-xs text-slate-500">Gestão de Clínicas</p>
+          <h1 className="text-lg font-bold text-white">InoovaSaúde</h1>
+          <p className="text-xs text-white/60">Gestão de Clínicas</p>
         </div>
       </div>
 
@@ -64,14 +64,14 @@ export function Sidebar() {
                   to={item.path}
                   className={cn(
                     "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200",
-                    "text-slate-600 hover:text-slate-900 hover:bg-slate-50",
-                    isActive && "nav-active bg-teal-50 text-teal-700"
+                    "text-white/80 hover:text-white hover:bg-white/10",
+                    isActive && "sidebar-active text-white"
                   )}
                 >
                   <Icon 
                     className={cn(
                       "w-5 h-5 transition-colors",
-                      isActive ? "text-teal-600" : "text-slate-500"
+                      isActive ? "text-white" : "text-white/70"
                     )} 
                   />
                   <span className="font-medium text-sm">{item.label}</span>
@@ -88,7 +88,7 @@ export function Sidebar() {
           onClick={handleLogout}
           className={cn(
             "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 w-full",
-            "text-slate-600 hover:text-rose-600 hover:bg-rose-50"
+            "text-white/70 hover:text-rose-300 hover:bg-white/10"
           )}
         >
           <LogOut className="w-5 h-5" />
@@ -97,8 +97,8 @@ export function Sidebar() {
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-4 border-t border-slate-200">
-        <p className="text-xs text-slate-400 text-center">
+      <div className="px-6 py-4 border-t border-white/10">
+        <p className="text-xs text-white/40 text-center">
           © 2025 InoovaSaúde
         </p>
       </div>
