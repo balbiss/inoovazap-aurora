@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import WhatsApp from "./pages/WhatsApp";
 import Automacoes from "./pages/Automacoes";
 import Perfil from "./pages/Perfil";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -18,15 +19,23 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <LayoutWrapper>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/whatsapp" element={<WhatsApp />} />
-            <Route path="/automacoes" element={<Automacoes />} />
-            <Route path="/perfil" element={<Perfil />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </LayoutWrapper>
+        <Routes>
+          <Route path="/auth" element={<Auth />} />
+          <Route
+            path="/*"
+            element={
+              <LayoutWrapper>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/whatsapp" element={<WhatsApp />} />
+                  <Route path="/automacoes" element={<Automacoes />} />
+                  <Route path="/perfil" element={<Perfil />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </LayoutWrapper>
+            }
+          />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
