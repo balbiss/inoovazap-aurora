@@ -9,19 +9,43 @@ interface MedicalKPICardProps {
   subtitle: string;
   iconBgColor: string;
   iconColor: string;
+  borderColor: string;
 }
 
-function MedicalKPICard({ icon: Icon, title, value, subtitle, iconBgColor, iconColor }: MedicalKPICardProps) {
+function MedicalKPICard({ 
+  icon: Icon, 
+  title, 
+  value, 
+  subtitle, 
+  iconBgColor, 
+  iconColor,
+  borderColor 
+}: MedicalKPICardProps) {
   return (
-    <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-5 min-w-[180px] flex-shrink-0 md:flex-shrink md:min-w-0">
+    <div 
+      className={cn(
+        "bg-white rounded-2xl border border-slate-100 p-5 min-w-[200px] flex-shrink-0 md:flex-shrink md:min-w-0",
+        "shadow-lg shadow-slate-200/50",
+        "border-l-4",
+        borderColor,
+        "transition-all duration-300 ease-out",
+        "hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60",
+        "cursor-pointer group"
+      )}
+    >
       <div className="flex items-start justify-between mb-4">
-        <div className={cn("p-3 rounded-full", iconBgColor)}>
-          <Icon className={cn("w-5 h-5", iconColor)} />
+        <div 
+          className={cn(
+            "p-4 rounded-full transition-transform duration-300 group-hover:scale-110",
+            iconBgColor
+          )}
+        >
+          <Icon className={cn("w-6 h-6", iconColor)} />
         </div>
       </div>
       <div className="space-y-1">
-        <p className="text-3xl font-bold text-slate-800">{value}</p>
-        <p className="text-sm font-medium text-slate-700">{title}</p>
+        <p className="text-4xl font-bold text-slate-800">{value}</p>
+        <p className="text-sm font-semibold text-slate-700">{title}</p>
         <p className="text-xs text-slate-500">{subtitle}</p>
       </div>
     </div>
@@ -37,32 +61,36 @@ export function MedicalKPIGrid() {
       title: "Pacientes Hoje",
       value: isLoading ? "..." : stats?.total || 0,
       subtitle: "agendamentos do dia",
-      iconBgColor: "bg-teal-50",
-      iconColor: "text-teal-600",
+      iconBgColor: "bg-sky-100",
+      iconColor: "text-sky-600",
+      borderColor: "border-l-sky-500",
     },
     {
       icon: CheckCircle,
       title: "Confirmados",
       value: isLoading ? "..." : stats?.confirmed || 0,
       subtitle: stats?.total ? `${Math.round((stats.confirmed / stats.total) * 100)}% do total` : "0%",
-      iconBgColor: "bg-emerald-50",
+      iconBgColor: "bg-emerald-100",
       iconColor: "text-emerald-600",
+      borderColor: "border-l-emerald-500",
     },
     {
       icon: XCircle,
       title: "Faltas",
       value: isLoading ? "..." : stats?.noShow || 0,
       subtitle: "não compareceram",
-      iconBgColor: "bg-rose-50",
+      iconBgColor: "bg-rose-100",
       iconColor: "text-rose-600",
+      borderColor: "border-l-rose-500",
     },
     {
       icon: UserPlus,
       title: "Novos Cadastros",
       value: isLoading ? "..." : stats?.newPatients || 0,
       subtitle: "esta semana",
-      iconBgColor: "bg-amber-50",
+      iconBgColor: "bg-amber-100",
       iconColor: "text-amber-600",
+      borderColor: "border-l-amber-500",
     },
   ];
 
@@ -76,7 +104,7 @@ export function MedicalKPIGrid() {
       </div>
       
       {/* Desktop: Grid */}
-      <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-5">
         {kpiData.map((kpi) => (
           <MedicalKPICard key={kpi.title} {...kpi} />
         ))}
