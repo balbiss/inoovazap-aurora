@@ -1,1 +1,4 @@
 project_id = "xqpogexkfafsgwmaattc"
+
+[functions.manage-instance]
+verify_jwt = false

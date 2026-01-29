@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      instances: {
+        Row: {
+          active: boolean | null
+          agent_name: string | null
+          ai_config: Json | null
+          company_name: string
+          created_at: string
+          followup_config: Json | null
+          id: string
+          pastorini_id: string
+          pastorini_status: string | null
+          schedule_config: Json | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          agent_name?: string | null
+          ai_config?: Json | null
+          company_name: string
+          created_at?: string
+          followup_config?: Json | null
+          id?: string
+          pastorini_id: string
+          pastorini_status?: string | null
+          schedule_config?: Json | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          agent_name?: string | null
+          ai_config?: Json | null
+          company_name?: string
+          created_at?: string
+          followup_config?: Json | null
+          id?: string
+          pastorini_id?: string
+          pastorini_status?: string | null
+          schedule_config?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
