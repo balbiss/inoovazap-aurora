@@ -1,218 +1,142 @@
 
 
-# Plano: Configuracao de Horarios por Medico
+# Plano: Redesign da Sidebar InoovaSaúde
 
-## Contexto
+## Objetivo
+Transformar a sidebar branca atual em uma sidebar com fundo verde teal forte, criando uma "moldura" profissional que dá mais personalidade à marca InoovaSaúde.
 
-Atualmente, as configuracoes de dias de trabalho, horarios e bloqueios estao no nivel da clinica (tabela `instances.schedule_config`). Porem, cada medico pode ter sua propria agenda, trabalhando em dias e horarios diferentes.
+## Mudanças Visuais
 
-## Mudancas Propostas
+### Antes vs Depois
 
-### 1. Migrar Banco de Dados
+| Elemento | Antes (Branco) | Depois (Verde Teal) |
+|----------|----------------|---------------------|
+| Fundo | `bg-white` | `bg-teal-700` |
+| Texto menu | `text-slate-600` | `text-white/80` |
+| Ícones | `text-slate-500` | `text-white/70` |
+| Item ativo | `bg-teal-50 text-teal-700` | `bg-white/10` com borda esquerda branca |
+| Logo texto | `text-slate-800` | `text-white` |
+| Logo ícone | `bg-teal-600` | `bg-white/20` com ícone branco |
+| Bordas | `border-slate-200` | `border-white/10` |
+| Botão Sair | `text-slate-600` | `text-white/70` hover `text-rose-300` |
 
-Adicionar uma coluna `schedule_config` na tabela `doctors` para armazenar as configuracoes individuais de cada profissional:
-
-```sql
-ALTER TABLE public.doctors 
-ADD COLUMN schedule_config JSONB DEFAULT '{
-  "work_days": [1, 2, 3, 4, 5],
-  "hours": {
-    "open": "08:00",
-    "close": "18:00",
-    "lunch_start": "12:00",
-    "lunch_end": "13:00"
-  },
-  "blocked_dates": []
-}'::jsonb;
-```
-
-### 2. Estrutura do JSON por Medico
-
-```json
-{
-  "work_days": [1, 2, 3, 4, 5],
-  "hours": {
-    "open": "08:00",
-    "close": "18:00",
-    "lunch_start": "12:00",
-    "lunch_end": "13:00"
-  },
-  "blocked_dates": [
-    { "date": "2025-02-15", "reason": "Ferias" },
-    { "date": "2025-03-01", "reason": "Congresso" }
-  ]
-}
-```
-
-### 3. Atualizar Dialog de Medico
-
-Expandir o `DoctorDialog` para incluir as configuracoes de agenda do profissional:
+### Resultado Visual Esperado
 
 ```text
-+--------------------------------------------------+
-|  Adicionar Profissional                     [X]  |
-+--------------------------------------------------+
-|  [Dados Basicos]  [Horarios]  [Bloqueios]        |
-+--------------------------------------------------+
-|                                                  |
-|  Tab "Dados Basicos":                            |
-|  - Nome, Especialidade, Cor, Duracao             |
-|                                                  |
-|  Tab "Horarios":                                 |
-|  - Dias de Trabalho: [Seg] [Ter] [Qua] ...       |
-|  - Abertura: [08:00]  Fechamento: [18:00]        |
-|  - Almoco: [12:00] - [13:00]                     |
-|                                                  |
-|  Tab "Bloqueios":                                |
-|  - Lista de datas bloqueadas para este medico   |
-|  - [+ Adicionar Bloqueio]                        |
-|                                                  |
-+--------------------------------------------------+
++------------------------+     +--------------------------------+
+|  ♥ InoovaSaúde        |     |                                |
+|     Gestão de Clínicas |     |   Área de Conteúdo             |
++------------------------+     |   (bg-slate-50)                |
+|  ┃ ▢ Visão Geral      |     |                                |
+|    📅 Agenda           |     |   Dashboard / Agenda /         |
+|    🩺 Profissionais    |     |   Pacientes / etc              |
+|    👥 Pacientes        |     |                                |
+|    ⚙ Configurações    |     |   Fundo claro para             |
++------------------------+     |   legibilidade máxima          |
+|  ↪ Sair               |     |                                |
++------------------------+     +--------------------------------+
+      bg-teal-700                     bg-slate-50
 ```
-
-### 4. Simplificar Configuracoes da Clinica
-
-Remover as configuracoes de "Horario de Funcionamento" e "Bloqueio de Agenda" da pagina `/settings`, deixando apenas:
-
-- Dados da Clinica (nome, responsavel, telefone)
-- Regras de Agendamento (duracao padrao, intervalo entre consultas, antecedencia minima)
-- Integracoes
-
-As configuracoes de horario agora vivem no cadastro de cada medico.
-
-### 5. Atualizar Hooks
-
-Modificar `useDoctors.ts` para incluir o novo campo:
-
-```typescript
-export interface DoctorScheduleConfig {
-  work_days: number[];
-  hours: {
-    open: string;
-    close: string;
-    lunch_start: string;
-    lunch_end: string;
-  };
-  blocked_dates: { date: string; reason: string }[];
-}
-
-export interface Doctor {
-  // ... campos existentes
-  schedule_config: DoctorScheduleConfig;
-}
-
-export interface DoctorInput {
-  // ... campos existentes
-  schedule_config?: DoctorScheduleConfig;
-}
-```
-
-### 6. Validacao na Agenda
-
-Ao criar um novo agendamento no `NewAppointmentDialog`, validar:
-
-1. Se a data selecionada e um dia de trabalho do medico escolhido
-2. Se o horario esta dentro do expediente do medico
-3. Se a data nao esta na lista de bloqueios do medico
-
----
 
 ## Arquivos a Modificar
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `supabase/migrations/...` | Adicionar coluna `schedule_config` na tabela `doctors` |
-| `src/integrations/supabase/types.ts` | Atualizar tipos com novo campo |
-| `src/hooks/useDoctors.ts` | Adicionar interface `DoctorScheduleConfig` e atualizar tipos |
-| `src/components/doctors/DoctorDialog.tsx` | Adicionar tabs com configuracoes de horarios e bloqueios |
-| `src/components/settings/ClinicSettings.tsx` | Remover secoes de horario e bloqueio (manter apenas dados da clinica e regras gerais) |
-| `src/components/schedule/NewAppointmentDialog.tsx` | Adicionar validacao de disponibilidade do medico |
+### 1. `src/index.css`
+- Atualizar classe `.clean-sidebar` de `bg-white` para `bg-teal-700`
+- Atualizar classe `.nav-active` para usar `bg-white/10` com borda branca
+- Atualizar variáveis CSS de sidebar para refletir novo tema escuro
+
+### 2. `src/components/layout/Sidebar.tsx`
+- Logo: Mudar fundo do ícone para `bg-white/20`, texto para `text-white`
+- Navegação: Ícones e textos em branco/branco translúcido
+- Item ativo: Fundo translúcido com indicador lateral branco
+- Botão Sair: Branco translúcido com hover em rose claro
+- Footer: Texto em `text-white/50`
+
+### 3. `src/components/layout/MobileHeader.tsx`
+- Aplicar mesmo estilo teal no header mobile para consistência
+- Fundo `bg-teal-700`, texto e ícone em branco
+
+### 4. `src/components/layout/BottomNav.tsx`
+- Manter branco (fica na parte inferior, não faz parte da "moldura")
+- Apenas ajustar cores de destaque para combinar
 
 ---
 
-## Resumo Visual da Nova Estrutura
+## Detalhes Técnicos
 
-```text
-Configuracoes da Clinica (/settings)
-  - Dados da Clinica (nome, telefone)
-  - Regras Gerais (duracao padrao, buffer, antecedencia)
-  - Integracoes
+### Sidebar.tsx - Novas Classes
 
-Profissionais (/doctors)
-  - Card do Dr. Pedro
-      - Dados: Nome, Especialidade, Cor
-      - Horarios: Seg-Sex, 08:00-18:00
-      - Bloqueios: 15/02 (Ferias), 01/03 (Congresso)
-  
-  - Card da Dra. Ana
-      - Dados: Nome, Especialidade, Cor
-      - Horarios: Ter-Qui, 14:00-20:00
-      - Bloqueios: 20/02 (Curso)
+```tsx
+// Aside container
+<aside className="sidebar-branded fixed left-0 top-0 h-screen w-64 flex flex-col z-50">
+
+// Logo área
+<div className="flex items-center gap-3 px-6 py-6 border-b border-white/10">
+  <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+    <Heart className="w-6 h-6 text-white" />
+  </div>
+  <div>
+    <h1 className="text-lg font-bold text-white">InoovaSaúde</h1>
+    <p className="text-xs text-white/60">Gestão de Clínicas</p>
+  </div>
+</div>
+
+// Item de navegação
+<NavLink className={cn(
+  "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200",
+  "text-white/80 hover:text-white hover:bg-white/10",
+  isActive && "sidebar-active bg-white/15 text-white"
+)}>
+  <Icon className={cn(
+    "w-5 h-5 transition-colors",
+    isActive ? "text-white" : "text-white/70"
+  )} />
+</NavLink>
+
+// Botão Sair
+<button className="text-white/70 hover:text-rose-300 hover:bg-white/10">
+
+// Footer
+<p className="text-xs text-white/40">© 2025 InoovaSaúde</p>
 ```
 
----
+### index.css - Nova Classe `.sidebar-branded`
 
-## Secao Tecnica
+```css
+.sidebar-branded {
+  @apply bg-teal-700;
+}
 
-### Migracao SQL Completa
+.sidebar-active {
+  @apply relative;
+}
 
-```sql
--- Adicionar coluna schedule_config aos doctors
-ALTER TABLE public.doctors 
-ADD COLUMN IF NOT EXISTS schedule_config JSONB 
-DEFAULT '{
-  "work_days": [1, 2, 3, 4, 5],
-  "hours": {
-    "open": "08:00",
-    "close": "18:00",
-    "lunch_start": "12:00",
-    "lunch_end": "13:00"
-  },
-  "blocked_dates": []
-}'::jsonb;
+.sidebar-active::before {
+  content: '';
+  @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full bg-white;
+}
 ```
 
-### Logica de Validacao no Dialog de Agendamento
+### Variáveis CSS Atualizadas
 
-```typescript
-// Validar se a data e horario estao disponiveis para o medico
-const validateDoctorAvailability = (doctor: Doctor, date: Date, time: string) => {
-  const config = doctor.schedule_config;
-  const dayOfWeek = date.getDay(); // 0 = domingo
-  
-  // 1. Verificar dia de trabalho
-  if (!config.work_days.includes(dayOfWeek)) {
-    return { valid: false, message: "Medico nao atende neste dia" };
-  }
-  
-  // 2. Verificar horario
-  if (time < config.hours.open || time >= config.hours.close) {
-    return { valid: false, message: "Horario fora do expediente" };
-  }
-  
-  // 3. Verificar almoco
-  if (time >= config.hours.lunch_start && time < config.hours.lunch_end) {
-    return { valid: false, message: "Horario de almoco" };
-  }
-  
-  // 4. Verificar bloqueios
-  const dateStr = format(date, "yyyy-MM-dd");
-  const blocked = config.blocked_dates.find(b => b.date === dateStr);
-  if (blocked) {
-    return { valid: false, message: `Bloqueado: ${blocked.reason}` };
-  }
-  
-  return { valid: true };
-};
+```css
+/* Sidebar com tema escuro */
+--sidebar-background: 175 43% 35%; /* teal-700 */
+--sidebar-foreground: 0 0% 100%;
+--sidebar-primary: 0 0% 100%;
+--sidebar-primary-foreground: 175 43% 35%;
+--sidebar-accent: 0 0% 100% / 0.1;
+--sidebar-accent-foreground: 0 0% 100%;
+--sidebar-border: 0 0% 100% / 0.1;
 ```
 
-### Ordem de Implementacao
+## Área de Conteúdo
+A área principal (Dashboard, Agenda, etc.) permanece com `bg-slate-50` conforme solicitado, criando o contraste desejado entre a "moldura" verde e o conteúdo limpo.
 
-1. Criar migracao SQL para adicionar `schedule_config` na tabela `doctors`
-2. Atualizar `types.ts` com o novo campo
-3. Atualizar `useDoctors.ts` com a interface de configuracao
-4. Expandir `DoctorDialog.tsx` com tabs para horarios e bloqueios
-5. Simplificar `ClinicSettings.tsx` removendo configuracoes que agora sao por medico
-6. Adicionar validacao no `NewAppointmentDialog.tsx`
-7. Testar fluxo completo
+## Ordem de Implementação
+
+1. Atualizar `src/index.css` com novas classes e variáveis
+2. Refatorar `src/components/layout/Sidebar.tsx` com novo esquema de cores
+3. Atualizar `src/components/layout/MobileHeader.tsx` para consistência
+4. Testar contraste e legibilidade em todas as telas
 
