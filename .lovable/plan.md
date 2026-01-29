@@ -1,193 +1,293 @@
 
 
-# Plano: Redesign do Dashboard "High-Tech"
+# Plano: Pagina de Integracao WhatsApp
 
 ## Visao Geral
 
-Vamos recriar completamente a pagina inicial (`/`) com foco em visual futurista, glassmorphism premium e efeitos de iluminacao sofisticados. O design sera inspirado em paineis de controle de nivel empresarial.
+Criar a pagina `/integration` com machine state para gerenciar conexao WhatsApp via Pastorini API. A interface seguira o design system "High-End Dark Glass" ja estabelecido no projeto.
 
 ---
 
-## Estrutura de Componentes
+## Informacoes da API
+
+**Base URL**: `https://zap.inoovaweb.com.br`
+**Autenticacao**: Header `x-api-key: 280896Ab@`
+
+### Endpoints Utilizados
+
+| Acao | Metodo | Endpoint | Descricao |
+|------|--------|----------|-----------|
+| Criar instancia | POST | `/api/instances` | Body: `{ id: "nome-unico" }` |
+| Obter QR Code | GET | `/api/instances/:id/qr` | Retorna `{ qrImage: "data:image/png;base64,..." }` |
+| Verificar status | GET | `/api/instances/:id/status` | Retorna `{ status: "CONNECTED", name, phoneNumber }` |
+| Deletar instancia | DELETE | `/api/instances/:id` | Remove instancia |
+| Configurar webhook | POST | `/api/instances/:id/webhook` | Body: `{ url, enabled, events }` |
+
+---
+
+## Arquitetura da Solucao
 
 ```text
-src/
-  pages/
-    Index.tsx              -- Dashboard principal (reescrito)
-  components/
-    dashboard/
-      DashboardHeader.tsx  -- Novo cabecalho com saudacao e data
-      KPICard.tsx          -- Card de KPI individual estilizado
-      KPIGrid.tsx          -- Grid de 4 KPIs com carrossel mobile
-      ActivityChart.tsx    -- Grafico de linha dark mode
-      RecentContacts.tsx   -- Lista de contatos recentes
++----------------------------------+
+|      Frontend (React)            |
+|  src/pages/Integration.tsx       |
++----------------------------------+
+              |
+              v
++----------------------------------+
+|    Edge Function (Deno)          |
+| supabase/functions/manage-instance|
+|  - Proxy seguro para Pastorini   |
+|  - Salva dados no Supabase       |
++----------------------------------+
+              |
+              v
++----------------------------------+
+|      Pastorini API               |
+|  https://zap.inoovaweb.com.br    |
++----------------------------------+
 ```
 
 ---
 
-## 1. Cabecalho do Dashboard
+## 1. Secret da API
 
-**Arquivo**: `src/components/dashboard/DashboardHeader.tsx`
+**Acao**: Adicionar secret `PASTORINI_API_KEY` com valor `280896Ab@`
 
-**Elementos**:
-- Saudacao dinamica: "Ola, [Nome da Empresa]" em `text-3xl font-light text-white`
-- Data atual formatada em portugues (ex: "Quarta-feira, 29 de Janeiro de 2025") em `text-slate-400`
-- Botao "Novo Agendamento" com gradiente indigo-to-violet e icone Plus brilhante
-
-**Integracao**:
-- Buscar dados do perfil do usuario via Supabase (`profiles.company_name`)
-- Usar `date-fns` para formatacao de data em pt-BR
+- A API Key sera armazenada de forma segura no Supabase Secrets
+- A Edge Function acessara via `Deno.env.get('PASTORINI_API_KEY')`
 
 ---
 
-## 2. Grid de KPIs (O Fator Uau)
+## 2. Edge Function Atualizada
 
-**Arquivo**: `src/components/dashboard/KPICard.tsx`
+**Arquivo**: `supabase/functions/manage-instance/index.ts`
 
-**Estilo do Card**:
-```text
-bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6
-hover:bg-white/[0.07] transition-all duration-300
-```
+### Novas Acoes
 
-**Estrutura Interna**:
-- **Icone**: Container circular com fundo transparente colorido (ex: `bg-indigo-500/20`) e icone na cor neon
-- **Titulo**: `text-slate-400 text-sm font-medium uppercase tracking-wider`
-- **Numero Grande**: `text-3xl md:text-4xl font-bold text-white` com possivel gradiente
-- **Badge de Variacao**: Badge pequeno verde neon (`bg-emerald-500/20 text-emerald-400`) ou vermelho neon para crescimento negativo
+| Action | Descricao | Parametros |
+|--------|-----------|------------|
+| `create` | Cria instancia na Pastorini + salva no Supabase | `instance_name` |
+| `status` | Obtem status da instancia | `instance_id` |
+| `get_qr` | Obtem QR Code para conexao | `instance_id` |
+| `delete` | Remove instancia da Pastorini + Supabase | `instance_id` |
+| `get_instances` | Lista instancias do usuario | - |
 
-**Dados Fake**:
-| KPI | Valor | Variacao |
-|-----|-------|----------|
-| Mensagens | 12.847 | +12% |
-| Leads Capturados | 2.350 | +8% |
-| Automacoes Ativas | 18 | +3 |
-| Taxa de Resposta | 94.2% | -0.8% |
+### Logica de Criacao
 
-**Arquivo**: `src/components/dashboard/KPIGrid.tsx`
+1. Gerar ID unico para instancia (ex: `user_id_timestamp`)
+2. POST para Pastorini `/api/instances`
+3. Configurar webhook automaticamente
+4. Salvar registro na tabela `instances` do Supabase
+5. Retornar dados da instancia
 
-**Responsividade**:
-- **Desktop**: Grid de 4 colunas (`grid-cols-4 gap-4`)
-- **Mobile**: Scroll horizontal com `overflow-x-auto` e cards com `min-w-[260px]` ou grid de 2 colunas (`grid-cols-2`)
+### Headers para Pastorini
 
----
-
-## 3. Grafico de Atividade (Activity Chart)
-
-**Arquivo**: `src/components/dashboard/ActivityChart.tsx`
-
-**Container**: Card glass largo ocupando a largura total ou 2/3 da tela
-
-**Configuracao Recharts (Dark Mode)**:
-- **Grid Lines**: `stroke="hsl(217, 33%, 12%)"` - quase invisiveis
-- **Linha do Grafico**: Gradiente Ciano Neon (`hsl(188, 94%, 43%)`) para Roxo (`hsl(270, 91%, 60%)`)
-- **Area Preenchida**: Gradiente com opacidade de 0.3 no topo para 0 na base
-- **Tooltip**: Fundo escuro (`bg-slate-900/95`) com borda sutil (`border-white/10`)
-- **Eixos**: `stroke="hsl(215, 20%, 45%)"` com fonte pequena
-
-**Dados**: 7 dias da semana com valores de atividade
-
----
-
-## 4. Lista de Contatos Recentes
-
-**Arquivo**: `src/components/dashboard/RecentContacts.tsx`
-
-**Container**: Card glass ocupando 1/3 da tela (ao lado do grafico em desktop)
-
-**Estrutura do Item**:
-```text
-[Avatar] Nome do Contato         [Badge Status]
-         Ultima mensagem...      
---------------------------------------------- (border-white/5)
-```
-
-**Avatar**: Circulo com iniciais ou foto, fundo gradiente se nao houver foto
-
-**Badges de Status**:
-- "Agendado": `bg-emerald-500/20 text-emerald-400 border-emerald-500/30`
-- "Pendente": `bg-amber-500/20 text-amber-400 border-amber-500/30`
-- "Concluido": `bg-slate-500/20 text-slate-400 border-slate-500/30`
-
-**Dados Fake**: 5 contatos com nomes e status variados
-
----
-
-## 5. Pagina Principal Atualizada
-
-**Arquivo**: `src/pages/Index.tsx`
-
-**Layout Desktop**:
-```text
-+--------------------------------------------------+
-| DashboardHeader (Saudacao + Data + Botao)        |
-+--------------------------------------------------+
-| KPI 1    | KPI 2    | KPI 3    | KPI 4           |
-+--------------------------------------------------+
-| ActivityChart (2/3)     | RecentContacts (1/3)  |
-+--------------------------------------------------+
-```
-
-**Layout Mobile**:
-```text
-+---------------------------+
-| DashboardHeader           |
-+---------------------------+
-| <- KPIs em scroll ->      |
-+---------------------------+
-| ActivityChart             |
-+---------------------------+
-| RecentContacts            |
-+---------------------------+
+```typescript
+const headers = {
+  'Content-Type': 'application/json',
+  'x-api-key': Deno.env.get('PASTORINI_API_KEY')!
+}
 ```
 
 ---
 
-## Detalhes Tecnicos
+## 3. Pagina de Integracao
 
-### Dependencias Utilizadas
-- `date-fns`: Para formatacao de data em portugues (ja instalado)
-- `recharts`: Para grafico de linha (ja instalado)
-- `lucide-react`: Icones (ja instalado)
-- `@supabase/supabase-js`: Para buscar dados do perfil (ja configurado)
+**Arquivo**: `src/pages/Integration.tsx`
 
-### Efeitos Visuais Especiais
-1. **Glow sutil nos icones** ao hover
-2. **Transicoes suaves** (300ms) em todos os cards
-3. **Gradientes de texto** nos numeros grandes
-4. **Sombras neon** sutis nos elementos interativos
-5. **Blur de fundo** nos cards glass (`backdrop-blur-xl`)
+### Estados da Interface
 
-### Cores Principais
 ```text
-Fundo Card: bg-white/5
-Borda Card: border-white/10
-Texto Principal: text-white
-Texto Secundario: text-slate-400
-Neon Azul: hsl(217, 91%, 60%)
-Neon Ciano: hsl(188, 94%, 43%)
-Verde Positivo: text-emerald-400
-Vermelho Negativo: text-rose-400
+ESTADO 1: OFFLINE (Sem instancia)
++------------------------------------------+
+|                                          |
+|     [WhatsApp Icon - Cinza]              |
+|                                          |
+|   Conecte seu WhatsApp para comecar      |
+|                                          |
+|   [=== Conectar Novo Numero ===]         |
+|        (Botao gradiente verde)           |
+|                                          |
++------------------------------------------+
+
+ESTADO 2: AGUARDANDO QR CODE
++------------------------------------------+
+|                                          |
+|   +--------------------+                 |
+|   |                    |                 |
+|   |   [QR CODE IMG]    |  <-- Borda      |
+|   |                    |      animada    |
+|   +--------------------+                 |
+|                                          |
+|   Abra o WhatsApp > Aparelhos...         |
+|                                          |
+|   [Cancelar]                             |
+|                                          |
++------------------------------------------+
+
+ESTADO 3: CONECTADO (Online)
++------------------------------------------+
+|                                          |
+|   [Check Icon Verde] SISTEMA OPERACIONAL |
+|                                          |
+| +----------------+ +-------------------+ |
+| | Nome Sessao    | | Numero Conectado  | |
+| | Atendimento... | | +55 11 9999-9999  | |
+| +----------------+ +-------------------+ |
+|                                          |
+| +--------------------------------------+ |
+| | Webhook                    [Ativo]   | |
+| | https://n8n.../webhook...            | |
+| +--------------------------------------+ |
+|                                          |
+|   [Desconectar Instancia] (vermelho)     |
+|                                          |
++------------------------------------------+
+```
+
+### Componentes Internos
+
+#### ConnectionCard (Estado Offline)
+- Icone MessageCircle grande (80px) em cinza
+- Texto de boas-vindas
+- Botao com gradiente verde-para-ciano
+- Efeito hover com glow
+
+#### QRCodeCard (Estado QR)
+- Container do QR com borda animada (scanning effect)
+- Imagem base64 do QR Code
+- Instrucoes passo-a-passo
+- Botao cancelar para voltar ao estado 1
+- Indicador de "Aguardando leitura..."
+
+#### ConnectedPanel (Estado Online)
+- Icone CheckCircle2 gigante com glow verde neon
+- Texto "SISTEMA OPERACIONAL" em gradiente
+- Grid de cards de informacao:
+  - Nome da sessao
+  - Numero conectado (formatado)
+  - Status do webhook
+- Botao "Desconectar" com estilo de perigo
+
+### Logica de Polling
+
+```typescript
+const { data: statusData, isLoading } = useQuery({
+  queryKey: ['instance-status', instanceId],
+  queryFn: () => supabase.functions.invoke('manage-instance', {
+    body: { action: 'status', instance_id: instanceId }
+  }),
+  refetchInterval: currentState === 'qr' ? 3000 : false,
+  enabled: !!instanceId && currentState === 'qr'
+});
+
+// Transicao automatica quando conectar
+useEffect(() => {
+  if (statusData?.data?.status === 'CONNECTED') {
+    setCurrentState('connected');
+  }
+}, [statusData]);
+```
+
+---
+
+## 4. Animacoes CSS
+
+**Arquivo**: `src/index.css` (adicionar)
+
+```css
+/* Scanning Border Animation */
+@keyframes scanning {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+.qr-scanning-border {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    hsl(142 71% 45%),
+    transparent
+  );
+  background-size: 200% 200%;
+  animation: scanning 2s linear infinite;
+}
+
+/* Success Pulse */
+@keyframes success-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px hsl(142 71% 45% / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px hsl(142 71% 45% / 0.8);
+  }
+}
+
+.success-glow {
+  animation: success-pulse 2s ease-in-out infinite;
+}
+```
+
+---
+
+## 5. Roteamento
+
+**Arquivo**: `src/App.tsx`
+
+Adicionar rota `/integration` dentro do AuthGuard.
+
+---
+
+## 6. Navegacao
+
+**Arquivo**: `src/components/layout/Sidebar.tsx`
+
+Adicionar item de navegacao:
+```typescript
+{ icon: Plug, label: "Integracao", path: "/integration" }
 ```
 
 ---
 
 ## Arquivos a Criar
-1. `src/components/dashboard/DashboardHeader.tsx`
-2. `src/components/dashboard/KPICard.tsx`
-3. `src/components/dashboard/KPIGrid.tsx`
-4. `src/components/dashboard/ActivityChart.tsx`
-5. `src/components/dashboard/RecentContacts.tsx`
+
+1. `src/pages/Integration.tsx` - Pagina principal de integracao
 
 ## Arquivos a Modificar
-1. `src/pages/Index.tsx` - Reescrever com nova estrutura
 
-## Arquivos a Remover/Substituir
-- Os componentes `QuickStats.tsx` e `RecentActivity.tsx` serao substituidos pelos novos
+1. `supabase/functions/manage-instance/index.ts` - Adicionar acoes da Pastorini API
+2. `src/App.tsx` - Adicionar rota /integration
+3. `src/components/layout/Sidebar.tsx` - Adicionar link de navegacao
+4. `src/index.css` - Adicionar animacoes do QR Code
 
 ---
 
-## Resultado Esperado
+## Tratamento de Erros
 
-Um dashboard premium com visual futurista que transmite profissionalismo e tecnologia avancada. Cada elemento tera atencao aos detalhes de iluminacao, espacamento e hierarquia visual, criando uma experiencia de usuario de nivel SaaS empresarial.
+- Toast de erro se a criacao falhar
+- Retry automatico do QR Code se expirar
+- Confirmacao antes de deletar instancia
+- Loading states em todos os botoes de acao
+
+---
+
+## Fluxo do Usuario
+
+1. Usuario acessa `/integration`
+2. Ve estado "Offline" com botao de conectar
+3. Clica em "Conectar Novo Numero"
+4. Edge Function cria instancia na Pastorini
+5. QR Code aparece com animacao de scanning
+6. Usuario escaneia com WhatsApp
+7. Polling detecta `CONNECTED`
+8. Interface transiciona para painel de sucesso
+9. Usuario pode desconectar a qualquer momento
 
