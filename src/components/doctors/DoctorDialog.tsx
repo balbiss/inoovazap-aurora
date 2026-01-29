@@ -17,13 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { 
   useCreateDoctor, 
   useUpdateDoctor, 
@@ -49,12 +42,6 @@ const colorOptions = [
   { value: "#3b82f6", label: "Azul" },
 ];
 
-const durationOptions = [
-  { value: "15", label: "15 minutos" },
-  { value: "30", label: "30 minutos" },
-  { value: "45", label: "45 minutos" },
-  { value: "60", label: "1 hora" },
-];
 
 const WEEK_DAYS = [
   { id: 0, label: "Domingo", short: "Dom" },
@@ -256,22 +243,19 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
 
               {/* Duration */}
               <div className="space-y-2">
-                <Label className="text-slate-700">Duração Padrão da Consulta</Label>
-                <Select
-                  value={String(watch("default_duration"))}
-                  onValueChange={(v) => setValue("default_duration", parseInt(v))}
-                >
-                  <SelectTrigger className="border-slate-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {durationOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="text-slate-700">Duração Padrão da Consulta (min)</Label>
+                <Input
+                  type="number"
+                  min={5}
+                  max={240}
+                  className="border-slate-200"
+                  {...register("default_duration", { 
+                    required: true,
+                    valueAsNumber: true,
+                    min: 5,
+                    max: 240
+                  })}
+                />
               </div>
 
               {/* Active */}
