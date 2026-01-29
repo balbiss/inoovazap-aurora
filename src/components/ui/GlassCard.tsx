@@ -13,8 +13,8 @@ const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
       <div
         ref={ref}
         className={cn(
-          "glass-card p-6",
-          hover && "transition-all duration-300 hover:scale-[1.02] hover:shadow-neon-lg",
+          "bg-white rounded-lg border border-slate-200 shadow-sm p-6",
+          hover && "transition-all duration-200 hover:shadow-md hover:border-slate-300",
           className
         )}
         {...props}

@@ -47,20 +47,20 @@ export function DashboardHeader({ onNewAppointment }: DashboardHeaderProps) {
   const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
       <div className="space-y-1">
-        <h1 className="text-2xl md:text-3xl font-light text-white">
-          Olá, <span className="font-medium">{loading ? "..." : companyName}</span>
+        <h1 className="text-2xl md:text-3xl font-semibold text-slate-800">
+          Olá, <span className="text-teal-600">{loading ? "..." : companyName}</span>
         </h1>
-        <p className="text-slate-400 text-sm md:text-base">{capitalizedDate}</p>
+        <p className="text-slate-500 text-sm md:text-base">{capitalizedDate}</p>
       </div>
       
       {onNewAppointment && (
         <Button
           onClick={onNewAppointment}
-          className="group flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-medium text-sm transition-all duration-300 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.02]"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-medium text-sm transition-colors shadow-sm"
         >
-          <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
+          <Plus className="w-4 h-4" />
           Novo Agendamento
         </Button>
       )}

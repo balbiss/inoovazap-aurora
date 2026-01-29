@@ -1,16 +1,13 @@
-import { MessageCircle } from "lucide-react";
-import { NeonText } from "@/components/ui/NeonText";
+import { Heart } from "lucide-react";
 
 export function MobileHeader() {
   return (
-    <header className="glass-bottomnav fixed top-0 left-0 right-0 z-50 md:hidden">
-      <div className="flex items-center justify-center gap-2 px-4 py-4">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-blue to-neon-cyan flex items-center justify-center shadow-neon">
-          <MessageCircle className="w-5 h-5 text-background" />
+    <header className="clean-bottomnav fixed top-0 left-0 right-0 z-50 md:hidden border-b border-slate-200">
+      <div className="flex items-center justify-center gap-2 px-4 py-3">
+        <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center">
+          <Heart className="w-5 h-5 text-white" />
         </div>
-        <NeonText as="h1" className="text-xl tracking-tight" glow={false}>
-          InoovaZap
-        </NeonText>
+        <h1 className="text-lg font-bold text-slate-800">InoovaSaúde</h1>
       </div>
     </header>
   );
