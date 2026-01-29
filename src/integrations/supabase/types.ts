@@ -135,6 +135,7 @@ export type Database = {
           id: string
           instance_id: string
           name: string
+          schedule_config: Json | null
           specialty: string
         }
         Insert: {
@@ -146,6 +147,7 @@ export type Database = {
           id?: string
           instance_id: string
           name: string
+          schedule_config?: Json | null
           specialty: string
         }
         Update: {
@@ -157,6 +159,7 @@ export type Database = {
           id?: string
           instance_id?: string
           name?: string
+          schedule_config?: Json | null
           specialty?: string
         }
         Relationships: [
