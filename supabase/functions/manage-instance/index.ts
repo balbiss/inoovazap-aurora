@@ -83,28 +83,22 @@ Deno.serve(async (req) => {
 
     // ========== CREATE INSTANCE ==========
     if (action === 'create') {
-      const pastoriniId = instance_name || `inst_${user.id.slice(0, 8)}_${Date.now()}`
+      const pastoriniId = `inst_${user.id.slice(0, 8)}_${Date.now()}`
+      const displayName = instance_name || 'Atendimento'
       
-      console.log('Creating instance with ID:', pastoriniId)
+      console.log('Creating instance with ID:', pastoriniId, 'Name:', displayName)
 
       // Create instance in Pastorini
       const pastoriniData = await callPastoriniApi('/api/instances', 'POST', { id: pastoriniId })
       console.log('Pastorini create response:', pastoriniData)
 
-      // Get user profile for company name
-      const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('company_name')
-        .eq('user_id', user.id)
-        .single()
-
-      // Save instance to Supabase
+      // Save instance to Supabase with the user-provided name
       const { data: instance, error: dbError } = await supabaseClient
         .from('instances')
         .insert({
           user_id: user.id,
           pastorini_id: pastoriniId,
-          company_name: profile?.company_name || 'Atendimento',
+          company_name: displayName,
           pastorini_status: 'created',
         })
         .select()
