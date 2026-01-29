@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LayoutWrapper } from "@/components/layout/LayoutWrapper";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import Index from "./pages/Index";
 import WhatsApp from "./pages/WhatsApp";
 import Automacoes from "./pages/Automacoes";
@@ -24,15 +25,17 @@ const App = () => (
           <Route
             path="/*"
             element={
-              <LayoutWrapper>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/whatsapp" element={<WhatsApp />} />
-                  <Route path="/automacoes" element={<Automacoes />} />
-                  <Route path="/perfil" element={<Perfil />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </LayoutWrapper>
+              <AuthGuard>
+                <LayoutWrapper>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/whatsapp" element={<WhatsApp />} />
+                    <Route path="/automacoes" element={<Automacoes />} />
+                    <Route path="/perfil" element={<Perfil />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </LayoutWrapper>
+              </AuthGuard>
             }
           />
         </Routes>
