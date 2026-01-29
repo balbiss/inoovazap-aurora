@@ -330,6 +330,46 @@ Deno.serve(async (req) => {
       )
     }
 
+    // ========== GET PROFILE PICTURE ==========
+    if (action === 'get_profile_picture') {
+      if (!instance_id) {
+        return new Response(
+          JSON.stringify({ error: 'instance_id is required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Get the phone number from status to build JID
+      const statusData = await callPastoriniApi(`/api/instances/${instance_id}/status`, 'GET')
+      
+      if (!statusData.phoneNumber) {
+        return new Response(
+          JSON.stringify({ success: false, profilePictureUrl: null }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Build JID from phone number
+      const jid = `${statusData.phoneNumber}@s.whatsapp.net`
+      
+      try {
+        const profileData = await callPastoriniApi(`/api/instances/${instance_id}/profile-picture/${jid}`, 'GET')
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            profilePictureUrl: profileData.url || profileData.profilePictureUrl || profileData.profilePicUrl || null 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      } catch (e) {
+        console.log('Error fetching profile picture:', e)
+        return new Response(
+          JSON.stringify({ success: false, profilePictureUrl: null }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
+
     return new Response(
       JSON.stringify({ error: 'Invalid action' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

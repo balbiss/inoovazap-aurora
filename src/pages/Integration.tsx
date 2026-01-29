@@ -2,14 +2,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   MessageCircle, 
-  CheckCircle2, 
   Loader2, 
   X, 
   Smartphone, 
-  Zap, 
   Plus,
   QrCode,
-  RefreshCw
+  RefreshCw,
+  Settings,
+  Trash2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -69,6 +69,9 @@ export default function Integration() {
   const [timeLeft, setTimeLeft] = useState(30);
   const [isRefreshingQr, setIsRefreshingQr] = useState(false);
   const [qrError, setQrError] = useState<string | null>(null);
+  
+  // Profile picture state
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   
   // Refs for cleanup
   const qrRetryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -134,11 +137,24 @@ export default function Integration() {
       setConnectionState("connected");
       setQrCode(null);
       queryClient.invalidateQueries({ queryKey: ["user-instances"] });
+      
+      // Fetch profile picture when connected
+      if (instanceData?.pastorini_id) {
+        fetchProfilePicture(instanceData.pastorini_id);
+      }
+      
       toast.success("WhatsApp Conectado!", {
         description: "Seu número foi conectado com sucesso.",
       });
     }
-  }, [statusData, queryClient]);
+  }, [statusData, queryClient, instanceData?.pastorini_id]);
+
+  // Fetch profile picture when already connected on load
+  useEffect(() => {
+    if (connectionState === "connected" && instanceData?.pastorini_id && !profilePictureUrl) {
+      fetchProfilePicture(instanceData.pastorini_id);
+    }
+  }, [connectionState, instanceData?.pastorini_id, profilePictureUrl]);
 
   // Timer for QR code refresh (30 seconds)
   useEffect(() => {
@@ -200,6 +216,20 @@ export default function Integration() {
       }
     }
     return null;
+  }, []);
+
+  const fetchProfilePicture = useCallback(async (pastoriniId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-instance", {
+        body: { action: "get_profile_picture", instance_id: pastoriniId },
+      });
+      
+      if (!error && data?.profilePictureUrl) {
+        setProfilePictureUrl(data.profilePictureUrl);
+      }
+    } catch (error) {
+      console.log("Error fetching profile picture:", error);
+    }
   }, []);
 
   const refreshQrCode = useCallback(async () => {
@@ -485,38 +515,60 @@ export default function Integration() {
         {connectionState === "connected" && instanceData && (
           <GlassCard className="p-4 sm:p-6">
             <div className="flex items-center justify-between gap-4">
-              {/* Left: Icon + Info */}
+              {/* Left: Avatar + Info */}
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 success-glow">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                {/* Profile Picture with green ring */}
+                <div className="relative flex-shrink-0">
+                  <div className="w-14 h-14 rounded-full ring-2 ring-emerald-500 ring-offset-2 ring-offset-background overflow-hidden">
+                    {profilePictureUrl ? (
+                      <img 
+                        src={profilePictureUrl} 
+                        alt="WhatsApp Profile" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-emerald-500/20 flex items-center justify-center">
+                        <MessageCircle className="w-6 h-6 text-emerald-500" />
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <div>
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h3 className="font-semibold text-foreground">
-                      {instanceData.company_name}
-                    </h3>
-                    <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
-                      Conectado
-                    </Badge>
+                  <h3 className="font-semibold text-foreground text-lg">
+                    {instanceData.company_name}
+                  </h3>
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                    <div className="flex items-center gap-1.5">
+                      <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>{instanceData.company_name}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Smartphone className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>{formatPhoneNumber(statusData?.phoneNumber || instanceData?.phone_number || "")}</span>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {formatPhoneNumber(statusData?.phoneNumber || instanceData?.phone_number || "WhatsApp ativo")}
-                  </p>
                 </div>
               </div>
 
               {/* Right: Actions */}
               <div className="flex items-center gap-2 flex-shrink-0">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <Settings className="w-5 h-5" />
+                </Button>
+                
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                      variant="ghost" 
+                      size="icon"
+                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     >
-                      <X className="w-4 h-4 mr-2" />
-                      Desconectar
+                      <Trash2 className="w-5 h-5" />
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
