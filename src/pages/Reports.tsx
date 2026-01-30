@@ -67,15 +67,15 @@ export default function Reports() {
             let query = supabase
                 .from("appointments")
                 .select(`
-          id,
-          start_time,
-          status,
-          appointment_type,
-          insurance,
-          doctor:doctors!appointments_doctor_id_fkey(name),
-          patient:contacts!appointments_patient_id_fkey(name)
-        `)
-                .eq("instance_id", instance?.id)
+                    id,
+                    start_time,
+                    status,
+                    notes,
+                    insurance,
+                    doctor:doctors!appointments_doctor_id_fkey(name),
+                    patient:contacts!appointments_patient_id_fkey(name)
+                `)
+                .eq("instance_id", instance!.id)
                 .order("start_time", { ascending: false });
 
             if (selectedDoctor !== "all") {
@@ -131,7 +131,7 @@ export default function Reports() {
             format(parseISO(apt.start_time), "dd/MM/yyyy HH:mm"),
             (apt.patient as any)?.name || "N/A",
             (apt.doctor as any)?.name || "N/A",
-            apt.appointment_type || "Consulta",
+            apt.notes || "Consulta",
             apt.insurance || "Particular",
             apt.status === "confirmed" ? "Confirmado" : apt.status === "scheduled" ? "Agendado" : "Cancelado"
         ]);
@@ -318,7 +318,7 @@ export default function Reports() {
                                             </td>
                                             <td className="px-6 py-4 text-slate-600">
                                                 <div className="flex flex-col">
-                                                    <span>{apt.appointment_type || "Consulta"}</span>
+                                                    <span>{apt.notes || "Consulta"}</span>
                                                     <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">{apt.insurance || "Particular"}</span>
                                                 </div>
                                             </td>
