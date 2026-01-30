@@ -1,12 +1,14 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  Stethoscope, 
-  Users, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Calendar,
+  Stethoscope,
+  Users,
+  Settings,
   LogOut,
-  Heart
+  Heart,
+  Brain,
+  FileText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +19,8 @@ const navItems = [
   { icon: Calendar, label: "Agenda", path: "/schedule" },
   { icon: Stethoscope, label: "Profissionais", path: "/doctors" },
   { icon: Users, label: "Pacientes", path: "/patients" },
+  { icon: Brain, label: "Cérebro da IA", path: "/ai-brain" },
+  { icon: FileText, label: "Relatórios", path: "/reports" },
   { icon: Settings, label: "Configurações", path: "/settings" },
 ];
 
@@ -68,11 +72,11 @@ export function Sidebar() {
                     isActive && "sidebar-active text-white"
                   )}
                 >
-                  <Icon 
+                  <Icon
                     className={cn(
                       "w-5 h-5 transition-colors",
                       isActive ? "text-white" : "text-white/70"
-                    )} 
+                    )}
                   />
                   <span className="font-medium text-sm">{item.label}</span>
                 </NavLink>

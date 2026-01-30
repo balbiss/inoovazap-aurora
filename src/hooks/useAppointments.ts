@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useInstance } from "./useInstance";
-import { startOfDay, endOfDay, startOfWeek, endOfWeek, format } from "date-fns";
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, format, parseISO } from "date-fns";
 
 export type AppointmentStatus = "scheduled" | "confirmed" | "completed" | "cancelled" | "no_show";
 
@@ -14,6 +14,10 @@ export interface Appointment {
   end_time: string;
   status: AppointmentStatus;
   notes: string | null;
+  appointment_type: string | null;
+  insurance: string | null;
+  reminder_sent_at: string | null;
+  rescheduled_from: string | null;
   created_at: string;
   updated_at: string;
   // Joined data
@@ -37,26 +41,30 @@ export interface AppointmentInput {
   end_time: string;
   status?: AppointmentStatus;
   notes?: string | null;
+  appointment_type?: string | null;
+  insurance?: string | null;
 }
 
-export function useAppointments(date: Date, doctorId?: string) {
+export function useAppointments(date: Date | string, doctorId?: string) {
   const { data: instance } = useInstance();
 
   return useQuery({
-    queryKey: ["appointments", instance?.id, format(date, "yyyy-MM-dd"), doctorId],
+    queryKey: ["appointments", instance?.id, typeof date === "string" ? date : format(date, "yyyy-MM-dd"), doctorId],
     queryFn: async () => {
       if (!instance?.id) return [];
+
+      const parsedDate = typeof date === "string" ? parseISO(date) : date;
 
       let query = supabase
         .from("appointments")
         .select(`
           *,
           doctor:doctors(id, name, specialty, color),
-          patient:contacts(id, name, phone)
+          patient:contacts!appointments_patient_id_fkey(id, name, phone)
         `)
         .eq("instance_id", instance.id)
-        .gte("start_time", startOfDay(date).toISOString())
-        .lte("start_time", endOfDay(date).toISOString())
+        .gte("start_time", startOfDay(parsedDate).toISOString())
+        .lte("start_time", endOfDay(parsedDate).toISOString())
         .order("start_time");
 
       if (doctorId) {
@@ -72,10 +80,11 @@ export function useAppointments(date: Date, doctorId?: string) {
   });
 }
 
-export function useWeekAppointments(date: Date, doctorId?: string) {
+export function useWeekAppointments(date: Date | string, doctorId?: string) {
   const { data: instance } = useInstance();
-  const weekStart = startOfWeek(date, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
+  const parsedDate = typeof date === "string" ? parseISO(date) : date;
+  const weekStart = startOfWeek(parsedDate, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(parsedDate, { weekStartsOn: 1 });
 
   return useQuery({
     queryKey: ["appointments", instance?.id, "week", format(weekStart, "yyyy-MM-dd"), doctorId],
@@ -87,7 +96,7 @@ export function useWeekAppointments(date: Date, doctorId?: string) {
         .select(`
           *,
           doctor:doctors(id, name, specialty, color),
-          patient:contacts(id, name, phone)
+          patient:contacts!appointments_patient_id_fkey(id, name, phone)
         `)
         .eq("instance_id", instance.id)
         .gte("start_time", weekStart.toISOString())
@@ -108,8 +117,8 @@ export function useWeekAppointments(date: Date, doctorId?: string) {
 }
 
 export function useFilteredAppointments(
-  startDate: Date,
-  endDate: Date,
+  startDate: Date | string,
+  endDate: Date | string,
   doctorId?: string,
   status?: AppointmentStatus
 ) {
@@ -120,24 +129,27 @@ export function useFilteredAppointments(
       "appointments",
       instance?.id,
       "filtered",
-      format(startDate, "yyyy-MM-dd"),
-      format(endDate, "yyyy-MM-dd"),
+      typeof startDate === "string" ? startDate : format(startDate, "yyyy-MM-dd"),
+      typeof endDate === "string" ? endDate : format(endDate, "yyyy-MM-dd"),
       doctorId,
       status,
     ],
     queryFn: async () => {
       if (!instance?.id) return [];
 
+      const start = typeof startDate === "string" ? parseISO(startDate) : startDate;
+      const end = typeof endDate === "string" ? parseISO(endDate) : endDate;
+
       let query = supabase
         .from("appointments")
         .select(`
           *,
           doctor:doctors(id, name, specialty, color),
-          patient:contacts(id, name, phone)
+          patient:contacts!appointments_patient_id_fkey(id, name, phone)
         `)
         .eq("instance_id", instance.id)
-        .gte("start_time", startOfDay(startDate).toISOString())
-        .lte("start_time", endOfDay(endDate).toISOString())
+        .gte("start_time", startOfDay(start).toISOString())
+        .lte("start_time", endOfDay(end).toISOString())
         .order("start_time");
 
       if (doctorId) {

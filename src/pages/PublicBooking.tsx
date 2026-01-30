@@ -3,12 +3,12 @@ import { useParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format, getDay, addDays, isBefore, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { 
-  Heart, 
-  ChevronLeft, 
-  ChevronRight, 
-  Check, 
-  Loader2, 
+import {
+  Heart,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  Loader2,
   Calendar as CalendarIcon,
   User,
   Phone,
@@ -20,6 +20,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -29,7 +36,7 @@ interface ClinicData {
   id: string;
   company_name: string;
   clinic_config: {
-    slot_duration?: number;
+    appointment_types?: { id: string; name: string }[];
     insurance_types?: { id: string; name: string }[];
   } | null;
   schedule_config: any;
@@ -77,6 +84,8 @@ export default function PublicBooking() {
   const [patientName, setPatientName] = useState("");
   const [patientPhone, setPatientPhone] = useState("");
   const [patientCPF, setPatientCPF] = useState("");
+  const [appointmentType, setAppointmentType] = useState("Consulta");
+  const [insurance, setInsurance] = useState("Particular");
   const [bookingResult, setBookingResult] = useState<{
     doctorName: string;
     date: string;
@@ -99,8 +108,8 @@ export default function PublicBooking() {
   const { data: doctors, isLoading: isLoadingDoctors } = useQuery({
     queryKey: ["public-doctors", clinic?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_public_doctors", { 
-        p_instance_id: clinic!.id 
+      const { data, error } = await supabase.rpc("get_public_doctors", {
+        p_instance_id: clinic!.id
       });
       if (error) throw error;
       return (data || []).map((d: any) => ({
@@ -115,6 +124,31 @@ export default function PublicBooking() {
     },
     enabled: !!clinic?.id,
   });
+
+  useEffect(() => {
+    if (clinic?.company_name) {
+      document.title = `${clinic.company_name} | Agendamento Online`;
+    }
+  }, [clinic?.company_name]);
+
+  // Set default appointment type and insurance from clinic config
+  useEffect(() => {
+    if (clinic?.clinic_config) {
+      const config = clinic.clinic_config;
+      if (config.appointment_types?.length) {
+        setAppointmentType(config.appointment_types[0].name);
+      }
+      if (config.insurance_types?.length) {
+        // Keep 'Particular' as first choice if it exists, otherwise use first config
+        const hasParticular = config.insurance_types.some(i => i.name === "Particular");
+        if (!hasParticular) {
+          setInsurance("Particular"); // Always have Particular as an option
+        } else {
+          setInsurance(config.insurance_types[0].name);
+        }
+      }
+    }
+  }, [clinic]);
 
   // Fetch busy slots for selected doctor and date
   const { data: busySlots } = useQuery({
@@ -135,8 +169,8 @@ export default function PublicBooking() {
     if (!selectedDoctor || !selectedDate) return [];
 
     const config = selectedDoctor.schedule_config;
-    // Priority: doctor's default_duration > clinic's slot_duration > fallback 30
-    const duration = selectedDoctor.default_duration || clinic?.clinic_config?.slot_duration || 30;
+    // Use doctor's default_duration as source of truth
+    const duration = selectedDoctor.default_duration || 30;
     const slots: string[] = [];
 
     const [openH, openM] = config.hours.open.split(":").map(Number);
@@ -166,7 +200,7 @@ export default function PublicBooking() {
       }
 
       const timeStr = `${currentH.toString().padStart(2, "0")}:${currentM.toString().padStart(2, "0")}`;
-      
+
       // Build slot start and end times for overlap check
       const slotStart = new Date(selectedDate);
       slotStart.setHours(currentH, currentM, 0, 0);
@@ -210,7 +244,7 @@ export default function PublicBooking() {
       const startTime = new Date(selectedDate);
       startTime.setHours(hours, minutes, 0, 0);
 
-      const duration = clinic.clinic_config?.slot_duration || selectedDoctor.default_duration || 30;
+      const duration = selectedDoctor.default_duration || 30;
       const endTime = new Date(startTime);
       endTime.setMinutes(endTime.getMinutes() + duration);
 
@@ -219,15 +253,27 @@ export default function PublicBooking() {
         p_doctor_id: selectedDoctor.id,
         p_patient_name: patientName,
         p_patient_phone: patientPhone.replace(/\D/g, ""),
-        p_start_time: startTime.toISOString(),
-        p_end_time: endTime.toISOString(),
+        p_start_time: format(startTime, "yyyy-MM-dd'T'HH:mm:ssXXX"),
+        p_end_time: format(endTime, "yyyy-MM-dd'T'HH:mm:ssXXX"),
         p_patient_cpf: patientCPF.replace(/\D/g, "") || null,
+        p_appointment_type: appointmentType,
+        p_insurance: insurance,
       });
 
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (appointmentId) => {
+      // Trigger WhatsApp confirmation
+      supabase.functions.invoke("manage-instance", {
+        body: {
+          action: "send_public_confirmation",
+          appointment_id: appointmentId
+        },
+      }).catch(err => {
+        console.error("Erro ao enviar confirmação WhatsApp:", err);
+      });
+
       setBookingResult({
         doctorName: selectedDoctor!.name,
         date: format(selectedDate!, "d 'de' MMMM", { locale: ptBR }),
@@ -258,7 +304,10 @@ export default function PublicBooking() {
   };
 
   const handleSubmit = () => {
-    if (!patientName.trim() || patientPhone.replace(/\D/g, "").length < 10) {
+    const rawPhone = patientPhone.replace(/\D/g, "");
+    const rawCPF = patientCPF.replace(/\D/g, "");
+    
+    if (!patientName.trim() || rawPhone.length < 10 || rawCPF.length !== 11) {
       return;
     }
     createBooking.mutate();
@@ -314,7 +363,7 @@ export default function PublicBooking() {
           </div>
           <h1 className="text-2xl font-bold text-slate-800 mb-2">Agendamento Online Indisponível</h1>
           <p className="text-slate-500">
-            {clinic.company_name} não está aceitando agendamentos online no momento. 
+            {clinic.company_name} não está aceitando agendamentos online no momento.
             Entre em contato diretamente com a clínica.
           </p>
         </div>
@@ -451,7 +500,7 @@ export default function PublicBooking() {
             </div>
 
             {/* Calendar */}
-            <div className="bg-white rounded-xl border border-slate-200 p-3">
+            <div className="bg-white rounded-xl border border-slate-200 p-3 flex justify-center">
               <Calendar
                 mode="single"
                 selected={selectedDate}
@@ -470,7 +519,7 @@ export default function PublicBooking() {
                   if (isBefore(addDays(new Date(), 30), date)) return true;
                   return false;
                 }}
-                className="pointer-events-auto"
+                className="pointer-events-auto mx-auto"
               />
             </div>
 
@@ -574,9 +623,57 @@ export default function PublicBooking() {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-700 text-xs">Tipo de Consulta</Label>
+                  <Select value={appointmentType} onValueChange={setAppointmentType}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clinic?.clinic_config?.appointment_types?.length ? (
+                        clinic.clinic_config.appointment_types.map((t) => (
+                          <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
+                        ))
+                      ) : (
+                        <>
+                          <SelectItem value="Consulta">Consulta</SelectItem>
+                          <SelectItem value="Retorno">Retorno</SelectItem>
+                          <SelectItem value="Exame">Exame</SelectItem>
+                          <SelectItem value="Procedimento">Procedimento</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-700 text-xs">Convênio</Label>
+                  <Select value={insurance} onValueChange={setInsurance}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Particular">Particular</SelectItem>
+                      {clinic?.clinic_config?.insurance_types?.map((i) => (
+                        i.name !== "Particular" && <SelectItem key={i.id} value={i.name}>{i.name}</SelectItem>
+                      ))}
+                      {!clinic?.clinic_config?.insurance_types?.length && (
+                        <>
+                          <SelectItem value="Unimed">Unimed</SelectItem>
+                          <SelectItem value="Cassi">Cassi</SelectItem>
+                          <SelectItem value="Bradesco">Bradesco</SelectItem>
+                          <SelectItem value="Amil">Amil</SelectItem>
+                          <SelectItem value="Outros">Outros</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label className="text-slate-700">
-                  CPF <span className="text-slate-400 font-normal">(opcional)</span>
+                  CPF <span className="text-rose-500">*</span>
                 </Label>
                 <Input
                   value={patientCPF}
@@ -593,7 +690,8 @@ export default function PublicBooking() {
               disabled={
                 createBooking.isPending ||
                 !patientName.trim() ||
-                patientPhone.replace(/\D/g, "").length < 10
+                patientPhone.replace(/\D/g, "").length < 10 ||
+                patientCPF.replace(/\D/g, "").length !== 11
               }
               className="w-full h-14 text-lg bg-teal-600 hover:bg-teal-700 text-white"
             >
@@ -607,7 +705,7 @@ export default function PublicBooking() {
 
             {createBooking.isError && (
               <div className="bg-rose-50 text-rose-700 p-3 rounded-lg text-sm text-center">
-                Erro ao agendar. Tente novamente.
+                {(createBooking.error as any)?.message || "Erro ao agendar. Tente novamente."}
               </div>
             )}
           </div>

@@ -17,8 +17,8 @@ export default function Schedule() {
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
 
   const { data: appointments, isLoading } = useFilteredAppointments(
-    new Date(startDate),
-    new Date(endDate),
+    startDate,
+    endDate,
     selectedDoctorId,
     selectedStatus
   );
@@ -36,7 +36,7 @@ export default function Schedule() {
       const currentStart = new Date(startDate);
       const currentEnd = new Date(endDate);
       const diff = Math.ceil((currentEnd.getTime() - currentStart.getTime()) / (1000 * 60 * 60 * 24));
-      
+
       if (direction === "prev") {
         setStartDate(format(subDays(currentStart, diff), "yyyy-MM-dd"));
         setEndDate(format(subDays(currentEnd, diff), "yyyy-MM-dd"));
@@ -50,12 +50,12 @@ export default function Schedule() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-semibold text-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="space-y-0.5">
+          <h1 className="text-xl md:text-2xl font-semibold text-slate-800">
             Agenda
           </h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-slate-500 text-xs md:text-sm font-medium">
             Gerencie os agendamentos da clínica
           </p>
         </div>
@@ -75,7 +75,7 @@ export default function Schedule() {
 
           <Button
             onClick={() => setIsNewAppointmentOpen(true)}
-            className="bg-teal-600 hover:bg-teal-700 text-white"
+            className="hidden md:flex bg-teal-600 hover:bg-teal-700 text-white"
           >
             <Plus className="w-4 h-4 mr-2" />
             Novo Agendamento
@@ -106,14 +106,14 @@ export default function Schedule() {
       </div>
 
       {/* Appointment List */}
-      <AppointmentList 
+      <AppointmentList
         appointments={appointments || []}
         isLoading={isLoading}
       />
 
       {/* New Appointment Dialog */}
-      <NewAppointmentDialog 
-        open={isNewAppointmentOpen} 
+      <NewAppointmentDialog
+        open={isNewAppointmentOpen}
         onOpenChange={setIsNewAppointmentOpen}
         defaultDate={new Date(startDate)}
       />

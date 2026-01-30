@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Loader2, Plus, Trash2, Calendar } from "lucide-react";
+import { Loader2, Plus, Trash2, Calendar, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -17,13 +17,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { 
-  useCreateDoctor, 
-  useUpdateDoctor, 
-  Doctor, 
-  DoctorInput, 
+import {
+  useCreateDoctor,
+  useUpdateDoctor,
+  Doctor,
+  DoctorInput,
   DoctorScheduleConfig,
-  defaultScheduleConfig 
+  defaultScheduleConfig
 } from "@/hooks/useDoctors";
 import { cn } from "@/lib/utils";
 
@@ -109,7 +109,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
 
   const addBlockedDate = () => {
     if (!newBlockDate) return;
-    
+
     const dateStr = format(newBlockDate, "yyyy-MM-dd");
     if (scheduleConfig.blocked_dates.some((bd) => bd.date === dateStr)) {
       toast.error("Esta data já está bloqueada");
@@ -165,7 +165,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Editar Profissional" : "Adicionar Profissional"}
@@ -175,19 +175,19 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
           <Tabs defaultValue="dados" className="w-full">
             <TabsList className="grid w-full grid-cols-3 bg-slate-100">
-              <TabsTrigger 
+              <TabsTrigger
                 value="dados"
                 className="data-[state=active]:bg-white data-[state=active]:text-teal-700"
               >
                 Dados
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="horarios"
                 className="data-[state=active]:bg-white data-[state=active]:text-teal-700"
               >
                 Horários
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="bloqueios"
                 className="data-[state=active]:bg-white data-[state=active]:text-teal-700"
               >
@@ -249,7 +249,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                   min={5}
                   max={240}
                   className="border-slate-200"
-                  {...register("default_duration", { 
+                  {...register("default_duration", {
                     required: true,
                     valueAsNumber: true,
                     min: 5,
@@ -270,10 +270,10 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
             </TabsContent>
 
             {/* Tab: Horários */}
-            <TabsContent value="horarios" className="space-y-4 pt-4">
+            <TabsContent value="horarios" className="space-y-6 pt-4">
               {/* Dias de trabalho */}
               <div className="space-y-3">
-                <Label className="text-slate-700">Dias de Trabalho</Label>
+                <Label className="text-slate-700 font-medium">Dias de Trabalho</Label>
                 <div className="flex flex-wrap gap-2">
                   {WEEK_DAYS.map((day) => (
                     <button
@@ -293,65 +293,156 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                 </div>
               </div>
 
-              {/* Horários */}
-              <div className="grid gap-4 grid-cols-2">
+              {/* Presets */}
+              <div className="space-y-3 pt-2 border-t border-slate-100">
+                <Label className="text-slate-700 font-medium text-xs uppercase tracking-wider">Atalhos de Horário</Label>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => {
+                      setScheduleConfig(prev => ({
+                        ...prev,
+                        hours: { open: "08:00", close: "12:00", lunch_start: "12:00", lunch_end: "12:00" }
+                      }));
+                    }}
+                  >
+                    Manhã (08-12)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => {
+                      setScheduleConfig(prev => ({
+                        ...prev,
+                        hours: { open: "13:00", close: "18:00", lunch_start: "13:00", lunch_end: "13:00" }
+                      }));
+                    }}
+                  >
+                    Tarde (13-18)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => {
+                      setScheduleConfig(prev => ({
+                        ...prev,
+                        hours: { open: "08:00", close: "18:00", lunch_start: "12:00", lunch_end: "13:00" }
+                      }));
+                    }}
+                  >
+                    Dia Todo (08-18 c/ Almoço)
+                  </Button>
+                </div>
+              </div>
+
+              {/* Horários de Atendimento */}
+              <div className="grid gap-4 grid-cols-2 pt-2 border-t border-slate-100">
                 <div className="space-y-2">
                   <Label className="text-slate-700">Abertura</Label>
-                  <Input
-                    type="time"
-                    value={scheduleConfig.hours.open}
-                    onChange={(e) =>
-                      setScheduleConfig((prev) => ({
-                        ...prev,
-                        hours: { ...prev.hours, open: e.target.value },
-                      }))
-                    }
-                    className="border-slate-200"
-                  />
+                  <div className="relative">
+                    <Input
+                      type="time"
+                      value={scheduleConfig.hours.open}
+                      onChange={(e) =>
+                        setScheduleConfig((prev) => ({
+                          ...prev,
+                          hours: { ...prev.hours, open: e.target.value },
+                        }))
+                      }
+                      className="border-slate-200"
+                    />
+                    <Clock className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-slate-700">Fechamento</Label>
-                  <Input
-                    type="time"
-                    value={scheduleConfig.hours.close}
-                    onChange={(e) =>
-                      setScheduleConfig((prev) => ({
-                        ...prev,
-                        hours: { ...prev.hours, close: e.target.value },
-                      }))
-                    }
-                    className="border-slate-200"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-slate-700">Início Almoço</Label>
-                  <Input
-                    type="time"
-                    value={scheduleConfig.hours.lunch_start}
-                    onChange={(e) =>
-                      setScheduleConfig((prev) => ({
-                        ...prev,
-                        hours: { ...prev.hours, lunch_start: e.target.value },
-                      }))
-                    }
-                    className="border-slate-200"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-slate-700">Fim Almoço</Label>
-                  <Input
-                    type="time"
-                    value={scheduleConfig.hours.lunch_end}
-                    onChange={(e) =>
-                      setScheduleConfig((prev) => ({
-                        ...prev,
-                        hours: { ...prev.hours, lunch_end: e.target.value },
-                      }))
-                    }
-                    className="border-slate-200"
-                  />
+                  <div className="relative">
+                    <Input
+                      type="time"
+                      value={scheduleConfig.hours.close}
+                      onChange={(e) =>
+                        setScheduleConfig((prev) => ({
+                          ...prev,
+                          hours: { ...prev.hours, close: e.target.value },
+                        }))
+                      }
+                      className="border-slate-200"
+                    />
+                    <Clock className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                  </div>
                 </div>
               </div>
+
+              {/* Almoço Toggle */}
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <div className="space-y-0.5">
+                  <Label className="text-slate-800 font-medium">Intervalo de Almoço</Label>
+                  <p className="text-xs text-slate-500">Bloqueia agendamentos neste horário</p>
+                </div>
+                <Switch
+                  checked={scheduleConfig.hours.lunch_start !== scheduleConfig.hours.lunch_end}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setScheduleConfig(prev => ({
+                        ...prev,
+                        hours: { ...prev.hours, lunch_start: "12:00", lunch_end: "13:00" }
+                      }));
+                    } else {
+                      setScheduleConfig(prev => ({
+                        ...prev,
+                        hours: { ...prev.hours, lunch_start: prev.hours.open, lunch_end: prev.hours.open }
+                      }));
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Lunch Hours (Conditional) */}
+              {(scheduleConfig.hours.lunch_start !== scheduleConfig.hours.lunch_end) && (
+                <div className="grid gap-4 grid-cols-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="space-y-2">
+                    <Label className="text-slate-700">Início Almoço</Label>
+                    <div className="relative">
+                      <Input
+                        type="time"
+                        value={scheduleConfig.hours.lunch_start}
+                        onChange={(e) =>
+                          setScheduleConfig((prev) => ({
+                            ...prev,
+                            hours: { ...prev.hours, lunch_start: e.target.value },
+                          }))
+                        }
+                        className="border-slate-200"
+                      />
+                      <Clock className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-700">Fim Almoço</Label>
+                    <div className="relative">
+                      <Input
+                        type="time"
+                        value={scheduleConfig.hours.lunch_end}
+                        onChange={(e) =>
+                          setScheduleConfig((prev) => ({
+                            ...prev,
+                            hours: { ...prev.hours, lunch_end: e.target.value },
+                          }))
+                        }
+                        className="border-slate-200"
+                      />
+                      <Clock className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+              )}
             </TabsContent>
 
             {/* Tab: Bloqueios */}

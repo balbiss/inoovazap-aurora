@@ -10,23 +10,23 @@ import { Badge } from "@/components/ui/badge";
 const statusConfig = {
   scheduled: {
     label: "Agendado",
-    className: "bg-slate-100 text-slate-600 border-slate-200",
+    className: "bg-blue-600 text-white border-transparent",
   },
   confirmed: {
     label: "Confirmado",
-    className: "bg-teal-50 text-teal-700 border-teal-200",
+    className: "bg-emerald-600 text-white border-transparent",
   },
   completed: {
     label: "Concluído",
-    className: "bg-slate-100 text-slate-600 border-slate-200",
+    className: "bg-slate-600 text-white border-transparent",
   },
   cancelled: {
     label: "Cancelado",
-    className: "bg-rose-50 text-rose-600 border-rose-200",
+    className: "bg-rose-600 text-white border-transparent",
   },
   no_show: {
     label: "Falta",
-    className: "bg-rose-50 text-rose-600 border-rose-200",
+    className: "bg-amber-600 text-white border-transparent",
   },
 };
 
@@ -46,24 +46,42 @@ function TimelineItem({ appointment }: TimelineItemProps) {
         <span className="text-sm font-semibold text-slate-700">{startTime}</span>
       </div>
 
-      {/* Patient */}
-      <div className="flex items-center gap-2 flex-1 min-w-0">
-        <User className="w-4 h-4 text-slate-400 flex-shrink-0" />
-        <span className="text-sm text-slate-700 truncate font-medium">
-          {appointment.patient?.name || "Paciente não identificado"}
-        </span>
+      {/* Patient & Info */}
+      <div className="flex flex-col flex-[1.5] min-w-0">
+        <div className="flex items-center gap-2">
+          <User className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          <span className="text-sm text-slate-700 truncate font-semibold">
+            {appointment.patient?.name || "Paciente não identificado"}
+          </span>
+        </div>
+        {(appointment.appointment_type || appointment.insurance) && (
+          <div className="flex items-center gap-2 mt-1 ml-6">
+            {appointment.appointment_type && (
+              <Badge variant="outline" className="text-[10px] py-0 h-4 border-slate-200 text-slate-500 font-medium leading-none">
+                {appointment.appointment_type}
+              </Badge>
+            )}
+            {appointment.insurance && (
+              <Badge variant="outline" className="text-[10px] py-0 h-4 border-teal-100 text-teal-600 bg-teal-50 font-bold leading-none">
+                {appointment.insurance}
+              </Badge>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Doctor */}
-      <div className="hidden md:flex items-center gap-2 flex-1 min-w-0">
-        <Stethoscope className="w-4 h-4 flex-shrink-0 text-slate-400" />
-        <span className="text-sm text-slate-600 truncate">
-          {appointment.doctor?.name}
-        </span>
+      <div className="hidden lg:flex flex-col flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <Stethoscope className="w-4 h-4 flex-shrink-0 text-slate-400" />
+          <span className="text-sm text-slate-600 truncate">
+            {appointment.doctor?.name}
+          </span>
+        </div>
       </div>
 
       {/* Status */}
-      <Badge variant="outline" className={cn("text-xs font-medium", status.className)}>
+      <Badge className={cn("text-xs font-bold px-3 py-1 border-0 rounded-full", status.className)}>
         {status.label}
       </Badge>
     </div>
@@ -95,9 +113,9 @@ export function DayTimeline() {
             </p>
           </div>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => navigate("/schedule")}
           className="text-teal-600 hover:text-teal-700 hover:bg-teal-50"
         >

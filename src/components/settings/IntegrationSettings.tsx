@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { 
-  MessageCircle, 
-  Loader2, 
-  X, 
+import {
+  MessageCircle,
+  Loader2,
+  X,
   Plus,
   QrCode,
   RefreshCw,
 } from "lucide-react";
+import { WhatsAppAutomationSettings } from "./WhatsAppAutomationSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -60,7 +61,7 @@ export function IntegrationSettings() {
   const [qrError, setQrError] = useState<string | null>(null);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const qrRetryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const queryClient = useQueryClient();
 
   const { data: instancesData, isLoading: loadingInstances } = useQuery({
@@ -114,11 +115,11 @@ export function IntegrationSettings() {
       setConnectionState("connected");
       setQrCode(null);
       queryClient.invalidateQueries({ queryKey: ["user-instances"] });
-      
+
       if (instanceData?.pastorini_id) {
         fetchProfilePicture(instanceData.pastorini_id);
       }
-      
+
       toast.success("WhatsApp Conectado!");
     }
   }, [statusData, queryClient, instanceData?.pastorini_id]);
@@ -170,13 +171,13 @@ export function IntegrationSettings() {
         const { data, error } = await supabase.functions.invoke("manage-instance", {
           body: { action: "get_qr", instance_id: pastoriniId },
         });
-        
+
         if (error) throw error;
         if (data?.qrCode) return data.qrCode;
       } catch (error) {
         console.log(`QR fetch attempt ${i + 1}/${retries} failed:`, error);
       }
-      
+
       if (i < retries - 1) {
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
       }
@@ -189,7 +190,7 @@ export function IntegrationSettings() {
       const { data, error } = await supabase.functions.invoke("manage-instance", {
         body: { action: "get_profile_picture", instance_id: pastoriniId },
       });
-      
+
       if (!error && data?.profilePictureUrl) {
         setProfilePictureUrl(data.profilePictureUrl);
       }
@@ -200,10 +201,10 @@ export function IntegrationSettings() {
 
   const refreshQrCode = useCallback(async () => {
     if (!instanceData?.pastorini_id || isRefreshingQr) return;
-    
+
     setIsRefreshingQr(true);
     setQrError(null);
-    
+
     try {
       const qr = await fetchQrCodeWithRetry(instanceData.pastorini_id, 3);
       if (qr) {
@@ -228,19 +229,19 @@ export function IntegrationSettings() {
 
     setIsCreating(true);
     setQrError(null);
-    
+
     try {
       const { data, error } = await supabase.functions.invoke("manage-instance", {
         body: { action: "create", instance_name: instanceName },
       });
-      
+
       if (error) throw error;
 
       setInstanceData(data.instance);
       queryClient.invalidateQueries({ queryKey: ["user-instances"] });
       setIsNameModalOpen(false);
       setConnectionState("pending");
-      
+
       toast.success("Instância criada!");
     } catch (error: any) {
       toast.error("Erro ao criar instância", { description: error.message });
@@ -251,14 +252,14 @@ export function IntegrationSettings() {
 
   const handleOpenQrModal = async () => {
     if (!instanceData?.pastorini_id) return;
-    
+
     setIsQrModalOpen(true);
     setIsRefreshingQr(true);
     setQrError(null);
-    
+
     const qr = await fetchQrCodeWithRetry(instanceData.pastorini_id, 5);
     setIsRefreshingQr(false);
-    
+
     if (qr) {
       setQrCode(qr);
     } else {
@@ -277,17 +278,17 @@ export function IntegrationSettings() {
 
   const handleDeleteInstance = async () => {
     if (!instanceData?.pastorini_id) return;
-    
+
     try {
       await supabase.functions.invoke("manage-instance", {
         body: { action: "delete", instance_id: instanceData.pastorini_id },
       });
-      
+
       setInstanceData(null);
       setInstanceName("");
       setConnectionState("offline");
       queryClient.invalidateQueries({ queryKey: ["user-instances"] });
-      
+
       toast.success("Instância excluída");
     } catch (error: any) {
       toast.error("Erro ao excluir", { description: error.message });
@@ -296,18 +297,18 @@ export function IntegrationSettings() {
 
   const handleDisconnect = async () => {
     if (!instanceData?.pastorini_id) return;
-    
+
     try {
       await supabase.functions.invoke("manage-instance", {
         body: { action: "delete", instance_id: instanceData.pastorini_id },
       });
-      
+
       setInstanceData(null);
       setQrCode(null);
       setInstanceName("");
       setConnectionState("offline");
       queryClient.invalidateQueries({ queryKey: ["user-instances"] });
-      
+
       toast.success("Desconectado");
     } catch (error: any) {
       toast.error("Erro ao desconectar", { description: error.message });
@@ -358,7 +359,7 @@ export function IntegrationSettings() {
               <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
                 <MessageCircle className="w-6 h-6 text-amber-500" />
               </div>
-              
+
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="font-semibold text-foreground">
@@ -383,7 +384,7 @@ export function IntegrationSettings() {
                 <QrCode className="w-4 h-4 mr-2" />
                 Conectar
               </Button>
-              
+
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
@@ -422,7 +423,7 @@ export function IntegrationSettings() {
                   <MessageCircle className="w-6 h-6 text-emerald-500" />
                 )}
               </div>
-              
+
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="font-semibold text-foreground">
@@ -463,6 +464,9 @@ export function IntegrationSettings() {
         </GlassCard>
       )}
 
+      {/* Automation Settings (Visible if an instance exists) */}
+      {instanceData && <WhatsAppAutomationSettings />}
+
       {/* Name Modal */}
       <Dialog open={isNameModalOpen} onOpenChange={setIsNameModalOpen}>
         <DialogContent>
@@ -472,7 +476,7 @@ export function IntegrationSettings() {
               Escolha um nome para identificar esta conexão WhatsApp.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Nome</Label>
@@ -505,7 +509,7 @@ export function IntegrationSettings() {
               Abra o WhatsApp no seu celular e escaneie o código.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="flex flex-col items-center py-4">
             {isRefreshingQr ? (
               <div className="w-64 h-64 flex items-center justify-center">

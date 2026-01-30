@@ -38,7 +38,7 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast({
         variant: "destructive",
@@ -49,7 +49,7 @@ const Auth = () => {
     }
 
     setLoading(true);
-    
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -59,18 +59,18 @@ const Auth = () => {
       toast({
         variant: "destructive",
         title: "Erro ao entrar",
-        description: error.message === "Invalid login credentials" 
-          ? "Email ou senha incorretos" 
+        description: error.message === "Invalid login credentials"
+          ? "Email ou senha incorretos"
           : error.message,
       });
     }
-    
+
     setLoading(false);
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast({
         variant: "destructive",
@@ -90,9 +90,9 @@ const Auth = () => {
     }
 
     setLoading(true);
-    
+
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -115,13 +115,13 @@ const Auth = () => {
         description: "Verifique seu email para confirmar o cadastro.",
       });
     }
-    
+
     setLoading(false);
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -153,16 +153,16 @@ const Auth = () => {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-teal-600 to-teal-800">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-40 h-40 border-4 border-white rounded-full" />
-          <div className="absolute bottom-40 right-20 w-60 h-60 border-4 border-white rounded-full" />
-          <div className="absolute top-1/2 left-1/3 w-32 h-32 border-4 border-white rounded-full" />
+          <div className="absolute top-20 left-20 w-40 h-40 border-4 border-white rounded-full animate-pulse-slow" />
+          <div className="absolute bottom-40 right-20 w-60 h-60 border-4 border-white rounded-full animate-float-slow" />
+          <div className="absolute top-1/2 left-1/3 w-32 h-32 border-4 border-white rounded-full animate-pulse-slow shadow-[0_0_50px_rgba(255,255,255,0.2)]" />
         </div>
-        
+
         {/* Content */}
-        <div className="relative z-10 flex flex-col items-center justify-center w-full px-12">
-          <div className="text-center space-y-6">
-            <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto">
-              <Heart className="h-12 w-12 text-white" />
+        <div className="relative z-10 flex flex-col items-center justify-center w-full px-12 animate-float">
+          <div className="text-center space-y-6 animate-in fade-in slide-in-from-bottom-10 duration-1000">
+            <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto shadow-xl backdrop-blur-sm animate-float">
+              <Heart className="h-12 w-12 text-white animate-pulse" />
             </div>
             <h1 className="text-4xl xl:text-5xl font-light text-white leading-tight">
               Gestão de Clínicas
@@ -205,13 +205,13 @@ const Auth = () => {
 
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1 rounded-lg mb-6">
-                <TabsTrigger 
-                  value="login" 
+                <TabsTrigger
+                  value="login"
                   className="rounded-md data-[state=active]:bg-white data-[state=active]:text-teal-700 data-[state=active]:shadow-sm transition-all"
                 >
                   Entrar
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="signup"
                   className="rounded-md data-[state=active]:bg-white data-[state=active]:text-teal-700 data-[state=active]:shadow-sm transition-all"
                 >

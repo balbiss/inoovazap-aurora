@@ -47,7 +47,7 @@ export function DoctorCard({ doctor, onEdit }: DoctorCardProps) {
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
       {/* Color bar */}
       <div className="h-1.5" style={{ backgroundColor: doctor.color }} />
-      
+
       <div className="p-5">
         <div className="flex items-start gap-4">
           {/* Avatar */}
@@ -100,7 +100,14 @@ export function DoctorCard({ doctor, onEdit }: DoctorCardProps) {
           </div>
           <div className="flex items-center gap-2 text-sm text-slate-600">
             <Clock className="w-4 h-4 text-slate-400" />
-            <span>{hoursLabel}</span>
+            <div className="flex flex-col">
+              <span>{hoursLabel}</span>
+              {doctor.schedule_config.hours.lunch_start !== doctor.schedule_config.hours.lunch_end && (
+                <span className="text-xs text-slate-400">
+                  Intervalo: {doctor.schedule_config.hours.lunch_start} - {doctor.schedule_config.hours.lunch_end}
+                </span>
+              )}
+            </div>
           </div>
           {blockedCount > 0 && (
             <div className="flex items-center gap-2 text-sm text-amber-600">

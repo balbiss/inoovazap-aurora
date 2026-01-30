@@ -31,10 +31,10 @@ BEGIN
     VALUES (p_instance_id, p_patient_name, p_patient_phone, NULLIF(TRIM(p_patient_cpf), ''))
     RETURNING id INTO v_patient_id;
   ELSE
-    -- Update name and CPF if patient exists but they were empty
+    -- Update name and CPF. Always use the name provided in the booking to ensure accuracy.
     UPDATE contacts 
     SET 
-      name = COALESCE(NULLIF(name, ''), p_patient_name),
+      name = p_patient_name,
       cpf = COALESCE(cpf, NULLIF(TRIM(p_patient_cpf), ''))
     WHERE id = v_patient_id;
   END IF;

@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/ui/ResponsiveDialog";
 import {
   Select,
   SelectContent,
@@ -119,6 +120,7 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
   const [selectedInsurance, setSelectedInsurance] = useState<string>("particular");
+  const [selectedAppointmentType, setSelectedAppointmentType] = useState<string>("");
   const [status, setStatus] = useState<string>("scheduled");
   const [notes, setNotes] = useState("");
   const [patientSearch, setPatientSearch] = useState("");
@@ -158,11 +160,17 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
     enabled: !!selectedDoctorId && !!selectedDate && !!instance?.id,
   });
 
-  // Get insurance types from instance config
-  const insuranceTypes = useMemo((): InsuranceType[] => {
-    if (!instance?.clinic_config) return [];
-    const config = instance.clinic_config as { insurance_types?: InsuranceType[] };
-    return config.insurance_types || [];
+  // Get insurance and appointment types from instance config
+  const { insuranceTypes, appointmentTypes } = useMemo(() => {
+    if (!instance?.clinic_config) return { insuranceTypes: [], appointmentTypes: [] };
+    const config = instance.clinic_config as {
+      insurance_types?: InsuranceType[];
+      appointment_types?: { id: string; name: string }[];
+    };
+    return {
+      insuranceTypes: config.insurance_types || [],
+      appointmentTypes: config.appointment_types || []
+    };
   }, [instance]);
 
   // Generate time slots based on selected doctor's schedule and filter busy ones
@@ -177,7 +185,7 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
     }
 
     const allSlots = generateTimeSlots(selectedDoctor.schedule_config, selectedDoctor.default_duration);
-    
+
     if (!selectedDate || !busySlots || busySlots.length === 0) {
       return allSlots;
     }
@@ -256,10 +264,12 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
       await createAppointment.mutateAsync({
         doctor_id: selectedDoctorId,
         patient_id: selectedPatientId,
-        start_time: startTime.toISOString(),
-        end_time: endTime.toISOString(),
+        start_time: format(startTime, "yyyy-MM-dd'T'HH:mm:ssXXX"),
+        end_time: format(endTime, "yyyy-MM-dd'T'HH:mm:ssXXX"),
         status: status as any,
-        notes: notes ? `[${selectedInsurance === "particular" ? "Particular" : selectedInsurance}] ${notes}` : `[${selectedInsurance === "particular" ? "Particular" : selectedInsurance}]`,
+        appointment_type: selectedAppointmentType || null,
+        insurance: selectedInsurance || null,
+        notes: notes || null,
       });
 
       toast.success("Agendamento criado com sucesso!");
@@ -279,6 +289,7 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
     setSelectedDoctorId("");
     setSelectedPatientId("");
     setSelectedInsurance("particular");
+    setSelectedAppointmentType("");
     setStatus("scheduled");
     setNotes("");
   };
@@ -290,111 +301,111 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Novo Agendamento</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            {/* Doctor Select */}
-            <div className="space-y-2">
-              <Label>Profissional *</Label>
-              <Select value={selectedDoctorId} onValueChange={setSelectedDoctorId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o profissional" />
-                </SelectTrigger>
-                <SelectContent>
-                  {doctors?.map((doctor) => (
-                    <SelectItem key={doctor.id} value={doctor.id}>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: doctor.color }}
-                        />
-                        {doctor.name} - {doctor.specialty}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Doctor Schedule Info */}
-              {selectedDoctor && (
-                <div className="bg-slate-50 rounded-lg p-3 text-xs space-y-2 border border-slate-200">
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <Clock className="w-3.5 h-3.5 text-teal-600" />
-                    <span>
-                      <strong>Horário:</strong> {selectedDoctor.schedule_config.hours.open} - {selectedDoctor.schedule_config.hours.close}
-                      <span className="text-slate-400 ml-1">
-                        (almoço: {selectedDoctor.schedule_config.hours.lunch_start} - {selectedDoctor.schedule_config.hours.lunch_end})
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-600"><strong>Dias:</strong></span>
-                    <div className="flex gap-1">
-                      {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-                        <Badge
-                          key={day}
-                          variant="outline"
-                          className={cn(
-                            "text-[10px] px-1.5 py-0",
-                            selectedDoctor.schedule_config.work_days.includes(day)
-                              ? "bg-teal-50 text-teal-700 border-teal-200"
-                              : "bg-slate-100 text-slate-400 border-slate-200"
-                          )}
-                        >
-                          {dayNames[day]}
-                        </Badge>
-                      ))}
+      <ResponsiveDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        title="Novo Agendamento"
+      >
+        <div className="space-y-4 py-4 md:py-0">
+          {/* Doctor Select */}
+          <div className="space-y-2">
+            <Label>Profissional *</Label>
+            <Select value={selectedDoctorId} onValueChange={setSelectedDoctorId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o profissional" />
+              </SelectTrigger>
+              <SelectContent>
+                {doctors?.map((doctor) => (
+                  <SelectItem key={doctor.id} value={doctor.id}>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: doctor.color }}
+                      />
+                      {doctor.name} - {doctor.specialty}
                     </div>
-                  </div>
-                  <div className="text-slate-500">
-                    <strong>Duração padrão:</strong> {selectedDoctor.default_duration} min
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Doctor Schedule Info */}
+            {selectedDoctor && (
+              <div className="bg-slate-50 rounded-lg p-3 text-xs space-y-2 border border-slate-200">
+                <div className="flex items-center gap-2 text-slate-600">
+                  <Clock className="w-3.5 h-3.5 text-teal-600" />
+                  <span>
+                    <strong>Horário:</strong> {selectedDoctor.schedule_config.hours.open} - {selectedDoctor.schedule_config.hours.close}
+                    <span className="text-slate-400 ml-1">
+                      (almoço: {selectedDoctor.schedule_config.hours.lunch_start} - {selectedDoctor.schedule_config.hours.lunch_end})
+                    </span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-600"><strong>Dias:</strong></span>
+                  <div className="flex gap-1">
+                    {[0, 1, 2, 3, 4, 5, 6].map((day) => (
+                      <Badge
+                        key={day}
+                        variant="outline"
+                        className={cn(
+                          "text-[10px] px-1.5 py-0",
+                          selectedDoctor.schedule_config.work_days.includes(day)
+                            ? "bg-teal-50 text-teal-700 border-teal-200"
+                            : "bg-slate-100 text-slate-400 border-slate-200"
+                        )}
+                      >
+                        {dayNames[day]}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* Patient Search */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Paciente *</Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsPatientDialogOpen(true)}
-                  className="text-teal-600 hover:text-teal-700"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Novo
-                </Button>
+                <div className="text-slate-500">
+                  <strong>Duração padrão:</strong> {selectedDoctor.default_duration} min
+                </div>
               </div>
-              <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o paciente" />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className="p-2">
-                    <Input
-                      placeholder="Buscar paciente..."
-                      value={patientSearch}
-                      onChange={(e) => setPatientSearch(e.target.value)}
-                      className="mb-2"
-                    />
-                  </div>
-                  {patients?.map((patient) => (
-                    <SelectItem key={patient.id} value={patient.id}>
-                      {patient.name || patient.phone}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            )}
+          </div>
 
-            {/* Insurance Type */}
+          {/* Patient Search */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Paciente *</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsPatientDialogOpen(true)}
+                className="text-teal-600 hover:text-teal-700"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Novo
+              </Button>
+            </div>
+            <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o paciente" />
+              </SelectTrigger>
+              <SelectContent>
+                <div className="p-2">
+                  <Input
+                    placeholder="Buscar paciente..."
+                    value={patientSearch}
+                    onChange={(e) => setPatientSearch(e.target.value)}
+                    className="mb-2"
+                  />
+                </div>
+                {patients?.map((patient) => (
+                  <SelectItem key={patient.id} value={patient.id}>
+                    {patient.name || patient.phone}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Insurance Type */}
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Convênio</Label>
               <Select value={selectedInsurance} onValueChange={setSelectedInsurance}>
@@ -412,131 +423,152 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
               </Select>
             </div>
 
-            {/* Date Picker */}
+            {/* Appointment Type */}
             <div className="space-y-2">
-              <Label>Data *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !selectedDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? (
-                      format(selectedDate, "PPP", { locale: ptBR })
-                    ) : (
-                      <span>Selecione a data</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    locale={ptBR}
-                    disabled={(date) => {
-                      if (!selectedDoctor) return false;
-                      const dayOfWeek = getDay(date);
-                      const isWorkDay = selectedDoctor.schedule_config.work_days.includes(dayOfWeek);
-                      const dateStr = format(date, "yyyy-MM-dd");
-                      const isBlocked = selectedDoctor.schedule_config.blocked_dates.some((b) => b.date === dateStr);
-                      return !isWorkDay || isBlocked;
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
-
-              {/* Warning for non-work day or blocked date */}
-              {selectedDate && selectedDoctor && (!isWorkDay || isBlockedDate) && (
-                <div className="flex items-center gap-2 text-rose-600 text-xs bg-rose-50 p-2 rounded-lg">
-                  <AlertCircle className="w-4 h-4" />
-                  {isBlockedDate ? "Esta data está bloqueada" : "O profissional não atende neste dia"}
-                </div>
-              )}
-            </div>
-
-            {/* Time and Duration */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Horário *</Label>
-                <Select value={selectedTime} onValueChange={setSelectedTime}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableTimeSlots.map((time) => (
-                      <SelectItem key={time} value={time}>
-                        {time}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Duração</Label>
-                <Select value={duration} onValueChange={setDuration}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {durations.map((d) => (
-                      <SelectItem key={d.value} value={d.value}>
-                        {d.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Status */}
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select value={status} onValueChange={setStatus}>
+              <Label>Tipo de Consulta</Label>
+              <Select value={selectedAppointmentType} onValueChange={setSelectedAppointmentType}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="scheduled">Agendado</SelectItem>
-                  <SelectItem value="confirmed">Confirmado</SelectItem>
+                  {appointmentTypes.length === 0 ? (
+                    <SelectItem value="consulta" disabled>Nenhum tipo cadastrado</SelectItem>
+                  ) : (
+                    appointmentTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.name}>
+                        {type.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Date Picker */}
+          <div className="space-y-2">
+            <Label>Data *</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !selectedDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate ? (
+                    format(selectedDate, "PPP", { locale: ptBR })
+                  ) : (
+                    <span>Selecione a data</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  locale={ptBR}
+                  disabled={(date) => {
+                    if (!selectedDoctor) return false;
+                    const dayOfWeek = getDay(date);
+                    const isWorkDay = selectedDoctor.schedule_config.work_days.includes(dayOfWeek);
+                    const dateStr = format(date, "yyyy-MM-dd");
+                    const isBlocked = selectedDoctor.schedule_config.blocked_dates.some((b) => b.date === dateStr);
+                    return !isWorkDay || isBlocked;
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+
+            {/* Warning for non-work day or blocked date */}
+            {selectedDate && selectedDoctor && (!isWorkDay || isBlockedDate) && (
+              <div className="flex items-center gap-2 text-rose-600 text-xs bg-rose-50 p-2 rounded-lg">
+                <AlertCircle className="w-4 h-4" />
+                {isBlockedDate ? "Esta data está bloqueada" : "O profissional não atende neste dia"}
+              </div>
+            )}
+          </div>
+
+          {/* Time and Duration */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Horário *</Label>
+              <Select value={selectedTime} onValueChange={setSelectedTime}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTimeSlots.map((time) => (
+                    <SelectItem key={time} value={time}>
+                      {time}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Notes */}
             <div className="space-y-2">
-              <Label>Observações</Label>
-              <Textarea
-                placeholder="Observações sobre o agendamento..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              />
+              <Label>Duração</Label>
+              <Select value={duration} onValueChange={setDuration}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {durations.map((d) => (
+                    <SelectItem key={d.value} value={d.value}>
+                      {d.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={createAppointment.isPending || !isWorkDay || isBlockedDate}
-              className="bg-teal-600 hover:bg-teal-700 text-white"
-            >
-              {createAppointment.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : null}
-              Agendar
-            </Button>
+          {/* Status */}
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="scheduled">Agendado</SelectItem>
+                <SelectItem value="confirmed">Confirmado</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          {/* Notes */}
+          <div className="space-y-2">
+            <Label>Observações</Label>
+            <Textarea
+              placeholder="Observações sobre o agendamento..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={createAppointment.isPending || !isWorkDay || isBlockedDate}
+            className="bg-teal-600 hover:bg-teal-700 text-white"
+          >
+            {createAppointment.isPending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : null}
+            Agendar
+          </Button>
+        </div>
+      </ResponsiveDialog>
 
       {/* Quick Patient Creation */}
       <PatientDialog

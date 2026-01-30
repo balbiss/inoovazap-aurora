@@ -75,6 +75,7 @@
 }
 
 @layer components {
+
   /* Clean Card */
   .clean-card {
     @apply bg-white rounded-lg border border-slate-200 shadow-sm;
@@ -125,25 +126,25 @@
     @apply absolute -top-0.5 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-primary;
   }
 
-  /* Status Badges */
+  /* Status Badges - High Contrast Palette */
   .status-scheduled {
-    @apply bg-sky-50 text-sky-700 border-sky-200;
+    @apply bg-blue-600 text-white border-transparent shadow-md;
   }
 
   .status-confirmed {
-    @apply bg-emerald-50 text-emerald-700 border-emerald-200;
+    @apply bg-emerald-600 text-white border-transparent shadow-md;
   }
 
   .status-completed {
-    @apply bg-slate-100 text-slate-600 border-slate-200;
+    @apply bg-slate-500 text-white border-transparent shadow-md;
   }
 
   .status-cancelled {
-    @apply bg-rose-50 text-rose-700 border-rose-200;
+    @apply bg-rose-600 text-white border-transparent shadow-md;
   }
 
   .status-no-show {
-    @apply bg-rose-50 text-rose-700 border-rose-200;
+    @apply bg-amber-500 text-white border-transparent shadow-md;
   }
 
   /* Medical Icon Circle */
@@ -173,13 +174,22 @@
 }
 
 @layer utilities {
+
   /* Hide scrollbar */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
 }

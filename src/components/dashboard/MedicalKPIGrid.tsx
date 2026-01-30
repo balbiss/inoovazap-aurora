@@ -11,19 +11,19 @@ interface MedicalKPICardProps {
 
 function MedicalKPICard({ icon: Icon, title, value, subtitle }: MedicalKPICardProps) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 min-w-[180px] flex-shrink-0 md:flex-shrink md:min-w-0 hover:shadow-md transition-shadow duration-200">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-4 py-3.5 min-w-[160px] flex-shrink-0 md:flex-shrink md:min-w-0 hover:shadow-md transition-shadow duration-200">
       {/* Icon */}
-      <div className="mb-4">
-        <div className="p-3 rounded-full bg-teal-50 inline-flex">
-          <Icon className="w-5 h-5 text-teal-600" />
+      <div className="mb-3">
+        <div className="p-2 rounded-lg bg-teal-50 inline-flex">
+          <Icon className="w-4 h-4 text-teal-600" />
         </div>
       </div>
-      
+
       {/* Content */}
-      <div className="space-y-1">
-        <p className="text-3xl font-bold text-slate-800">{value}</p>
-        <p className="text-sm font-medium text-slate-600">{title}</p>
-        <p className="text-xs text-slate-400">{subtitle}</p>
+      <div className="space-y-0.5">
+        <p className="text-xl font-bold text-slate-900">{value}</p>
+        <p className="text-[13px] font-semibold text-slate-700">{title}</p>
+        <p className="text-[11px] text-slate-500 leading-tight">{subtitle}</p>
       </div>
     </div>
   );
@@ -67,7 +67,7 @@ export function MedicalKPIGrid() {
           <MedicalKPICard key={kpi.title} {...kpi} />
         ))}
       </div>
-      
+
       {/* Desktop: Grid */}
       <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpiData.map((kpi) => (

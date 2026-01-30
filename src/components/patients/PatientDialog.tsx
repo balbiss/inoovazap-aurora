@@ -65,7 +65,7 @@ export function PatientDialog({ open, onOpenChange, patient, onSuccess }: Patien
   const onSubmit = async (data: PatientInput) => {
     try {
       let result: Patient;
-      
+
       if (isEditing && patient) {
         result = await updatePatient.mutateAsync({ id: patient.id, ...data });
         toast.success("Paciente atualizado com sucesso!");
@@ -140,14 +140,21 @@ export function PatientDialog({ open, onOpenChange, patient, onSuccess }: Patien
 
           {/* CPF */}
           <div className="space-y-2">
-            <Label htmlFor="cpf">CPF</Label>
+            <Label htmlFor="cpf">CPF *</Label>
             <Input
               id="cpf"
               placeholder="000.000.000-00"
+              {...register("cpf", {
+                required: "CPF é obrigatório",
+                validate: (value) => value?.replace(/\D/g, "").length === 11 || "CPF deve ter 11 dígitos"
+              })}
               value={cpfValue}
               onChange={handleCPFChange}
               inputMode="numeric"
             />
+            {errors.cpf && (
+              <p className="text-xs text-rose-500">{errors.cpf.message}</p>
+            )}
           </div>
 
           {/* Health Insurance */}
