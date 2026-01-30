@@ -52,27 +52,39 @@ export default function AppointmentConfirmation() {
     const { data: appointment, isLoading, error, refetch } = useQuery({
         queryKey: ["appointment-confirmation", id],
         queryFn: async () => {
-            const { data, error } = await supabase.rpc("get_appointment_details_public", { p_id: id });
+            const { data, error } = await supabase
+                .from("appointments")
+                .select(`
+                    id,
+                    start_time,
+                    end_time,
+                    status,
+                    patient_name,
+                    doctor:doctors!appointments_doctor_id_fkey(id, name, specialty, default_duration, schedule_config),
+                    instance:instances!appointments_instance_id_fkey(company_name, clinic_config)
+                `)
+                .eq("id", id)
+                .maybeSingle();
 
             if (error) throw error;
-            if (!data || data.length === 0) return null;
+            if (!data) return null;
 
-            const apt = data[0];
-            console.log("Appointment Data Public:", apt);
+            const doctor = data.doctor as any;
+            const instance = data.instance as any;
 
             return {
-                id: apt.id,
-                start_time: apt.start_time,
-                end_time: apt.end_time,
-                status: apt.status,
-                patient_name: apt.patient_name || "Paciente",
-                doctor_name: apt.doctor_name || "Médico",
-                doctor_specialty: apt.doctor_specialty || "",
-                doctor_id: apt.doctor_id,
-                doctor_duration: apt.doctor_duration || 30,
-                doctor_schedule_config: apt.doctor_schedule_config || {},
-                company_name: apt.company_name || "Clínica",
-                clinic_config: apt.clinic_config || {}
+                id: data.id,
+                start_time: data.start_time,
+                end_time: data.end_time,
+                status: data.status || "scheduled",
+                patient_name: data.patient_name || "Paciente",
+                doctor_name: doctor?.name || "Médico",
+                doctor_specialty: doctor?.specialty || "",
+                doctor_id: doctor?.id,
+                doctor_duration: doctor?.default_duration || 30,
+                doctor_schedule_config: doctor?.schedule_config || {},
+                company_name: instance?.company_name || "Clínica",
+                clinic_config: instance?.clinic_config || {}
             } as AppointmentDetails;
         },
         enabled: !!id,
@@ -95,12 +107,27 @@ export default function AppointmentConfirmation() {
     // Actions mutation
     const actionMutation = useMutation({
         mutationFn: async ({ action, newStart }: { action: string; newStart?: string }) => {
-            const { error } = await supabase.rpc("patient_update_appointment", {
-                p_id: id,
-                p_action: action,
-                p_new_start: newStart,
-            });
-            if (error) throw error;
+            if (action === "confirm") {
+                const { error } = await supabase
+                    .from("appointments")
+                    .update({ status: "confirmed" })
+                    .eq("id", id);
+                if (error) throw error;
+            } else if (action === "reschedule" && newStart && appointment) {
+                const duration = appointment.doctor_duration || 30;
+                const start = new Date(newStart);
+                const end = new Date(start.getTime() + duration * 60 * 1000);
+                const { error } = await supabase
+                    .from("appointments")
+                    .update({
+                        start_time: start.toISOString(),
+                        end_time: end.toISOString(),
+                        rescheduled_from: appointment.start_time,
+                        status: "scheduled"
+                    })
+                    .eq("id", id);
+                if (error) throw error;
+            }
         },
         onSuccess: (_, variables) => {
             if (variables.action === "confirm") {

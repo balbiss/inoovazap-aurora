@@ -16,42 +16,67 @@ export type Database = {
     Tables: {
       appointments: {
         Row: {
+          appointment_type: string | null
+          contact_id: string | null
           created_at: string | null
           doctor_id: string
           end_time: string
           id: string
           instance_id: string
+          insurance: string | null
           notes: string | null
           patient_id: string
+          patient_name: string | null
+          reminder_sent_at: string | null
+          rescheduled_from: string | null
           start_time: string
           status: string | null
           updated_at: string | null
         }
         Insert: {
+          appointment_type?: string | null
+          contact_id?: string | null
           created_at?: string | null
           doctor_id: string
           end_time: string
           id?: string
           instance_id: string
+          insurance?: string | null
           notes?: string | null
           patient_id: string
+          patient_name?: string | null
+          reminder_sent_at?: string | null
+          rescheduled_from?: string | null
           start_time: string
           status?: string | null
           updated_at?: string | null
         }
         Update: {
+          appointment_type?: string | null
+          contact_id?: string | null
           created_at?: string | null
           doctor_id?: string
           end_time?: string
           id?: string
           instance_id?: string
+          insurance?: string | null
           notes?: string | null
           patient_id?: string
+          patient_name?: string | null
+          reminder_sent_at?: string | null
+          rescheduled_from?: string | null
           start_time?: string
           status?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "appointments_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "appointments_doctor_id_fkey"
             columns: ["doctor_id"]
@@ -180,6 +205,7 @@ export type Database = {
           clinic_config: Json | null
           company_name: string
           created_at: string
+          current_period_end: string | null
           followup_config: Json | null
           id: string
           pastorini_id: string
@@ -187,6 +213,10 @@ export type Database = {
           public_booking_active: boolean | null
           schedule_config: Json | null
           slug: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_plan: string | null
+          subscription_status: string | null
           user_id: string
         }
         Insert: {
@@ -196,6 +226,7 @@ export type Database = {
           clinic_config?: Json | null
           company_name: string
           created_at?: string
+          current_period_end?: string | null
           followup_config?: Json | null
           id?: string
           pastorini_id: string
@@ -203,6 +234,10 @@ export type Database = {
           public_booking_active?: boolean | null
           schedule_config?: Json | null
           slug?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
           user_id: string
         }
         Update: {
@@ -212,6 +247,7 @@ export type Database = {
           clinic_config?: Json | null
           company_name?: string
           created_at?: string
+          current_period_end?: string | null
           followup_config?: Json | null
           id?: string
           pastorini_id?: string
@@ -219,6 +255,10 @@ export type Database = {
           public_booking_active?: boolean | null
           schedule_config?: Json | null
           slug?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
           user_id?: string
         }
         Relationships: []
@@ -290,6 +330,53 @@ export type Database = {
             }
             Returns: string
           }
+        | {
+            Args: {
+              p_appointment_type?: string
+              p_doctor_id: string
+              p_end_time: string
+              p_instance_id: string
+              p_insurance?: string
+              p_notes?: string
+              p_patient_cpf?: string
+              p_patient_name: string
+              p_patient_phone: string
+              p_start_time: string
+            }
+            Returns: string
+          }
+      get_appointment_details: {
+        Args: { p_id: string }
+        Returns: {
+          clinic_config: Json
+          company_name: string
+          doctor_id: string
+          doctor_name: string
+          doctor_specialty: string
+          end_time: string
+          id: string
+          patient_name: string
+          start_time: string
+          status: string
+        }[]
+      }
+      get_appointment_details_public: {
+        Args: { p_id: string }
+        Returns: {
+          clinic_config: Json
+          company_name: string
+          doctor_duration: number
+          doctor_id: string
+          doctor_name: string
+          doctor_schedule_config: Json
+          doctor_specialty: string
+          end_time: string
+          id: string
+          patient_name: string
+          start_time: string
+          status: string
+        }[]
+      }
       get_busy_slots: {
         Args: { p_date: string; p_doctor_id: string }
         Returns: {
@@ -318,6 +405,10 @@ export type Database = {
           schedule_config: Json
           specialty: string
         }[]
+      }
+      patient_update_appointment: {
+        Args: { p_action: string; p_id: string; p_new_start?: string }
+        Returns: undefined
       }
     }
     Enums: {
