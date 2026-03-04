@@ -85,7 +85,7 @@ export default function PublicBooking() {
 
     const host = window.location.hostname;
     // Common domains to exclude
-    const mainDomains = ["inoovaweb.com.br", "localhost", "127.0.0.1", "aurora-app.com.br"];
+    const mainDomains = ["inoovaweb.com.br", "inoovasaude.inoovaweb.com.br", "localhost", "127.0.0.1", "aurora-app.com.br"];
 
     // Check if the current host is one of the main domains
     if (mainDomains.some(domain => host === domain)) return null;

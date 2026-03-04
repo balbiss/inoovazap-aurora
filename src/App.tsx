@@ -21,7 +21,7 @@ const queryClient = new QueryClient();
 
 const SubdomainRouter = () => {
   const host = window.location.hostname;
-  const mainDomains = ["inoovaweb.com.br", "localhost", "127.0.0.1", "aurora-app.com.br"];
+  const mainDomains = ["inoovaweb.com.br", "inoovasaude.inoovaweb.com.br", "localhost", "127.0.0.1", "aurora-app.com.br"];
 
   // Is it a subdomain of one of the main domains?
   const isSubdomain = !mainDomains.some(domain => host === domain) && host.split(".").length > 2;
