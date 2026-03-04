@@ -64,8 +64,8 @@ export function WelcomeClinicModal({ open }: WelcomeClinicModalProps) {
                             <Heart className="h-8 w-8 text-white" />
                         </div>
                         <div className="space-y-1">
-                            <h2 className="text-2xl font-bold text-white tracking-tight">Bem-vindo(a)!</h2>
-                            <p className="text-teal-50 text-sm">Vamos configurar seu consultório digital</p>
+                            <DialogTitle className="text-2xl font-bold text-white tracking-tight">Bem-vindo(a)!</DialogTitle>
+                            <DialogDescription className="text-teal-50 text-sm">Vamos configurar seu consultório digital</DialogDescription>
                         </div>
                     </div>
                 </div>
