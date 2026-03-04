@@ -77,7 +77,29 @@ function formatCPF(value: string): string {
 }
 
 export default function PublicBooking() {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug: paramsSlug } = useParams<{ slug: string }>();
+
+  // Extract slug from subdomain if not in params
+  const slug = useMemo(() => {
+    if (paramsSlug) return paramsSlug;
+
+    const host = window.location.hostname;
+    // Common domains to exclude
+    const mainDomains = ["inoovaweb.com.br", "localhost", "127.0.0.1", "aurora-app.com.br"];
+
+    // Check if the current host is one of the main domains
+    if (mainDomains.some(domain => host === domain)) return null;
+
+    // If it has a subdomain, extract it (e.g., clinic.inoovaweb.com.br -> clinic)
+    const parts = host.split(".");
+    if (parts.length > 2) {
+      // Handles clinic.inoovaweb.com.br and similar
+      return parts[0];
+    }
+
+    return null;
+  }, [paramsSlug]);
+
   const [step, setStep] = useState(1);
   const [selectedDoctor, setSelectedDoctor] = useState<PublicDoctor | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
