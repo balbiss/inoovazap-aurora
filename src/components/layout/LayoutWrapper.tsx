@@ -15,11 +15,9 @@ interface LayoutWrapperProps {
 
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
-  const { data: instance, isLoading, isError } = useInstance();
+  const { data: instance, isLoading } = useInstance();
 
-  // Only block on first load, avoid hanging spinner if data takes too long
-  // If isError is true, render anyway (user might just need to set up their clinic)
-  if (isLoading && !instance && !isError) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
