@@ -460,12 +460,20 @@ export default function PublicBooking() {
                     className="w-full bg-white rounded-xl p-4 border border-slate-200 hover:border-teal-300 hover:shadow-md transition-all text-left"
                   >
                     <div className="flex items-center gap-4">
-                      <div
-                        className="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold"
-                        style={{ backgroundColor: doctor.color || "#0d9488" }}
-                      >
-                        {doctor.name.charAt(0)}
-                      </div>
+                      {doctor.avatar_url ? (
+                        <img
+                          src={doctor.avatar_url}
+                          alt={doctor.name}
+                          className="w-14 h-14 rounded-full object-cover border border-slate-100"
+                        />
+                      ) : (
+                        <div
+                          className="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold"
+                          style={{ backgroundColor: doctor.color || "#0d9488" }}
+                        >
+                          {doctor.name.charAt(0)}
+                        </div>
+                      )}
                       <div className="flex-1">
                         <h3 className="font-semibold text-slate-800">{doctor.name}</h3>
                         <p className="text-sm text-slate-500">{doctor.specialty}</p>
@@ -492,12 +500,20 @@ export default function PublicBooking() {
 
             <div className="bg-white rounded-xl p-4 border border-slate-200">
               <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                  style={{ backgroundColor: selectedDoctor.color || "#0d9488" }}
-                >
-                  {selectedDoctor.name.charAt(0)}
-                </div>
+                {selectedDoctor.avatar_url ? (
+                  <img
+                    src={selectedDoctor.avatar_url}
+                    alt={selectedDoctor.name}
+                    className="w-10 h-10 rounded-full object-cover border border-slate-100"
+                  />
+                ) : (
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                    style={{ backgroundColor: selectedDoctor.color || "#0d9488" }}
+                  >
+                    {selectedDoctor.name.charAt(0)}
+                  </div>
+                )}
                 <div>
                   <p className="font-semibold text-slate-800">{selectedDoctor.name}</p>
                   <p className="text-xs text-slate-500">{selectedDoctor.specialty}</p>
@@ -577,12 +593,20 @@ export default function PublicBooking() {
             {/* Summary */}
             <div className="bg-teal-50 rounded-xl p-4 border border-teal-200">
               <div className="flex items-center gap-3 mb-3">
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                  style={{ backgroundColor: selectedDoctor?.color || "#0d9488" }}
-                >
-                  {selectedDoctor?.name.charAt(0)}
-                </div>
+                {selectedDoctor?.avatar_url ? (
+                  <img
+                    src={selectedDoctor.avatar_url}
+                    alt={selectedDoctor.name}
+                    className="w-10 h-10 rounded-full object-cover border border-teal-200"
+                  />
+                ) : (
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                    style={{ backgroundColor: selectedDoctor?.color || "#0d9488" }}
+                  >
+                    {selectedDoctor?.name.charAt(0)}
+                  </div>
+                )}
                 <div>
                   <p className="font-semibold text-slate-800">{selectedDoctor?.name}</p>
                   <p className="text-xs text-slate-600">{selectedDoctor?.specialty}</p>

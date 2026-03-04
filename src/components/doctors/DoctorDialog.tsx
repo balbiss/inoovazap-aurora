@@ -69,6 +69,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
     defaultValues: {
       name: "",
       specialty: "",
+      avatar_url: "",
       color: "#06b6d4",
       default_duration: 30,
       active: true,
@@ -78,8 +79,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
   useEffect(() => {
     if (doctor) {
       reset({
-        name: doctor.name,
-        specialty: doctor.specialty,
+        avatar_url: doctor.avatar_url || "",
         color: doctor.color,
         default_duration: doctor.default_duration,
         active: doctor.active,
@@ -87,8 +87,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
       setScheduleConfig(doctor.schedule_config || defaultScheduleConfig);
     } else {
       reset({
-        name: "",
-        specialty: "",
+        avatar_url: "",
         color: "#06b6d4",
         default_duration: 30,
         active: true,
@@ -99,6 +98,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
 
   const selectedColor = watch("color");
   const isActive = watch("active");
+  const avatarUrl = watch("avatar_url");
 
   const toggleWorkDay = (dayId: number) => {
     setScheduleConfig((prev) => ({
@@ -242,6 +242,31 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                   className="border-slate-200"
                   {...register("specialty", { required: true })}
                 />
+              </div>
+
+              {/* Avatar URL */}
+              <div className="space-y-2">
+                <Label htmlFor="avatar_url" className="text-slate-700">URL da Foto do Perfil</Label>
+                <div className="flex gap-3 items-start">
+                  <div className="flex-1">
+                    <Input
+                      id="avatar_url"
+                      placeholder="https://exemplo.com/foto.jpg"
+                      className="border-slate-200"
+                      {...register("avatar_url")}
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      Link para uma foto quadrada (preferencialmente).
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full border-2 border-slate-100 overflow-hidden bg-slate-50 flex items-center justify-center flex-shrink-0">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <Plus className="w-6 h-6 text-slate-300" />
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Color */}
