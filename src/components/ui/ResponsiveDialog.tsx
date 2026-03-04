@@ -14,6 +14,7 @@ import {
     DrawerHeader,
     DrawerTitle,
 } from "@/components/ui/drawer";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface ResponsiveDialogProps {
     children: React.ReactNode;
@@ -38,7 +39,13 @@ export function ResponsiveDialog({
                 <DrawerContent className="px-4 pb-8">
                     <DrawerHeader className="text-left px-0">
                         <DrawerTitle>{title}</DrawerTitle>
-                        {description && <DrawerDescription>{description}</DrawerDescription>}
+                        {description ? (
+                            <DrawerDescription>{description}</DrawerDescription>
+                        ) : (
+                            <VisuallyHidden>
+                                <DrawerDescription>{title}</DrawerDescription>
+                            </VisuallyHidden>
+                        )}
                     </DrawerHeader>
                     <div className="mt-4">{children}</div>
                 </DrawerContent>
@@ -51,7 +58,13 @@ export function ResponsiveDialog({
             <DialogContent className="max-w-lg">
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
-                    {description && <DialogDescription>{description}</DialogDescription>}
+                    {description ? (
+                        <DialogDescription>{description}</DialogDescription>
+                    ) : (
+                        <VisuallyHidden>
+                            <DialogDescription>{title}</DialogDescription>
+                        </VisuallyHidden>
+                    )}
                 </DialogHeader>
                 {children}
             </DialogContent>

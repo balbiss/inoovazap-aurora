@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useCreatePatient, useUpdatePatient, Patient, PatientInput } from "@/hooks/usePatients";
 
 // CPF mask helper
@@ -94,6 +94,9 @@ export function PatientDialog({ open, onOpenChange, patient, onSuccess }: Patien
           <DialogTitle>
             {isEditing ? "Editar Paciente" : "Novo Paciente"}
           </DialogTitle>
+          <VisuallyHidden>
+            <DialogDescription>Formulário para {isEditing ? "editar" : "cadastrar"} dados do paciente</DialogDescription>
+          </VisuallyHidden>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">

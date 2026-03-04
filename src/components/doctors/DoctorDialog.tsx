@@ -12,11 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import {
   useCreateDoctor,
   useUpdateDoctor,
@@ -199,6 +199,11 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
           <DialogTitle>
             {isEditing ? "Editar Profissional" : "Adicionar Profissional"}
           </DialogTitle>
+          <VisuallyHidden>
+            <DialogDescription>
+              Formulário para {isEditing ? "editar" : "cadastrar"} dados do profissional de saúde
+            </DialogDescription>
+          </VisuallyHidden>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
