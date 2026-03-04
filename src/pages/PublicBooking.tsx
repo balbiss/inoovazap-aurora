@@ -77,29 +77,7 @@ function formatCPF(value: string): string {
 }
 
 export default function PublicBooking() {
-  const { slug: paramsSlug } = useParams<{ slug: string }>();
-
-  // Extract slug from subdomain if not in params
-  const slug = useMemo(() => {
-    if (paramsSlug) return paramsSlug;
-
-    const host = window.location.hostname;
-    // Common domains to exclude
-    const mainDomains = ["inoovaweb.com.br", "inoovasaude.inoovaweb.com.br", "localhost", "127.0.0.1", "aurora-app.com.br"];
-
-    // Check if the current host is one of the main domains
-    if (mainDomains.some(domain => host === domain)) return null;
-
-    // If it has a subdomain, extract it (e.g., clinic.inoovaweb.com.br -> clinic)
-    const parts = host.split(".");
-    if (parts.length > 2) {
-      // Handles clinic.inoovaweb.com.br and similar
-      return parts[0];
-    }
-
-    return null;
-  }, [paramsSlug]);
-
+  const { slug } = useParams<{ slug: string }>();
   const [step, setStep] = useState(1);
   const [selectedDoctor, setSelectedDoctor] = useState<PublicDoctor | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -482,20 +460,12 @@ export default function PublicBooking() {
                     className="w-full bg-white rounded-xl p-4 border border-slate-200 hover:border-teal-300 hover:shadow-md transition-all text-left"
                   >
                     <div className="flex items-center gap-4">
-                      {doctor.avatar_url ? (
-                        <img
-                          src={doctor.avatar_url}
-                          alt={doctor.name}
-                          className="w-14 h-14 rounded-full object-cover border border-slate-100"
-                        />
-                      ) : (
-                        <div
-                          className="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold"
-                          style={{ backgroundColor: doctor.color || "#0d9488" }}
-                        >
-                          {doctor.name.charAt(0)}
-                        </div>
-                      )}
+                      <div
+                        className="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold"
+                        style={{ backgroundColor: doctor.color || "#0d9488" }}
+                      >
+                        {doctor.name.charAt(0)}
+                      </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-slate-800">{doctor.name}</h3>
                         <p className="text-sm text-slate-500">{doctor.specialty}</p>
@@ -522,20 +492,12 @@ export default function PublicBooking() {
 
             <div className="bg-white rounded-xl p-4 border border-slate-200">
               <div className="flex items-center gap-3">
-                {selectedDoctor.avatar_url ? (
-                  <img
-                    src={selectedDoctor.avatar_url}
-                    alt={selectedDoctor.name}
-                    className="w-10 h-10 rounded-full object-cover border border-slate-100"
-                  />
-                ) : (
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                    style={{ backgroundColor: selectedDoctor.color || "#0d9488" }}
-                  >
-                    {selectedDoctor.name.charAt(0)}
-                  </div>
-                )}
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                  style={{ backgroundColor: selectedDoctor.color || "#0d9488" }}
+                >
+                  {selectedDoctor.name.charAt(0)}
+                </div>
                 <div>
                   <p className="font-semibold text-slate-800">{selectedDoctor.name}</p>
                   <p className="text-xs text-slate-500">{selectedDoctor.specialty}</p>
@@ -615,20 +577,12 @@ export default function PublicBooking() {
             {/* Summary */}
             <div className="bg-teal-50 rounded-xl p-4 border border-teal-200">
               <div className="flex items-center gap-3 mb-3">
-                {selectedDoctor?.avatar_url ? (
-                  <img
-                    src={selectedDoctor.avatar_url}
-                    alt={selectedDoctor.name}
-                    className="w-10 h-10 rounded-full object-cover border border-teal-200"
-                  />
-                ) : (
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                    style={{ backgroundColor: selectedDoctor?.color || "#0d9488" }}
-                  >
-                    {selectedDoctor?.name.charAt(0)}
-                  </div>
-                )}
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                  style={{ backgroundColor: selectedDoctor?.color || "#0d9488" }}
+                >
+                  {selectedDoctor?.name.charAt(0)}
+                </div>
                 <div>
                   <p className="font-semibold text-slate-800">{selectedDoctor?.name}</p>
                   <p className="text-xs text-slate-600">{selectedDoctor?.specialty}</p>

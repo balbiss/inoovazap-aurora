@@ -30,7 +30,7 @@ interface AppointmentDetails {
     patient_name: string;
     doctor_name: string;
     doctor_specialty: string;
-    doctor_avatar_url: string | null;
+    doctor_id: string;
     doctor_duration: number;
     doctor_schedule_config: any;
     company_name: string;
@@ -65,7 +65,6 @@ export default function AppointmentConfirmation() {
                 patient_name: data.patient_name || "Paciente",
                 doctor_name: data.doctor_name || "Médico",
                 doctor_specialty: data.doctor_specialty || "",
-                doctor_avatar_url: data.doctor_avatar_url || null,
                 doctor_duration: data.doctor_duration || 30,
                 doctor_schedule_config: data.doctor_schedule_config || {},
                 company_name: data.company_name || "Clínica",
@@ -263,17 +262,6 @@ export default function AppointmentConfirmation() {
                                 </div>
 
                                 <div className="flex flex-col items-center pt-6 border-t border-slate-200/60">
-                                    {appointment.doctor_avatar_url ? (
-                                        <img
-                                            src={appointment.doctor_avatar_url}
-                                            alt={appointment.doctor_name}
-                                            className="w-16 h-16 rounded-full object-cover mb-3 border-2 border-white shadow-sm"
-                                        />
-                                    ) : (
-                                        <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center mb-3 text-teal-600">
-                                            <Stethoscope className="w-8 h-8" />
-                                        </div>
-                                    )}
                                     <div className="text-slate-800 font-semibold text-lg">{appointment.doctor_name}</div>
                                     <div className="text-slate-500 text-sm">{appointment.doctor_specialty}</div>
                                 </div>
