@@ -15,16 +15,22 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Safety timeout: if Supabase doesn't respond within 10s, give up and redirect to auth
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+    }, 10000);
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (!session?.user) {
           navigate("/auth", { replace: true });
         }
-        
+
+        clearTimeout(timeoutId);
         setLoading(false);
       }
     );
@@ -33,15 +39,19 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (!session?.user) {
         navigate("/auth", { replace: true });
       }
-      
+
+      clearTimeout(timeoutId);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   if (loading) {

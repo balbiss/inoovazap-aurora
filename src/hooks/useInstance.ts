@@ -23,5 +23,7 @@ export function useInstance() {
         current_period_end: new Date(new Date().getFullYear() + 10, 0, 1).toISOString() // 10 years from now
       } : null;
     },
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
