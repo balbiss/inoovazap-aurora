@@ -25,7 +25,7 @@ BEGIN
     a.start_time,
     a.end_time,
     a.status,
-    c.name as patient_name,
+    COALESCE(c.name, a.patient_name) as patient_name,
     d.name as doctor_name,
     d.specialty as doctor_specialty,
     d.id as doctor_id,
