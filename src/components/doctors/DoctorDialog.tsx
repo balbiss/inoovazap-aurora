@@ -79,6 +79,8 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
   useEffect(() => {
     if (doctor) {
       reset({
+        name: doctor.name,
+        specialty: doctor.specialty,
         avatar_url: doctor.avatar_url || "",
         color: doctor.color,
         default_duration: doctor.default_duration,
@@ -87,6 +89,8 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
       setScheduleConfig(doctor.schedule_config || defaultScheduleConfig);
     } else {
       reset({
+        name: "",
+        specialty: "",
         avatar_url: "",
         color: "#06b6d4",
         default_duration: 30,
