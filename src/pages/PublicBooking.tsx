@@ -42,6 +42,7 @@ interface ClinicData {
   schedule_config: any;
   public_booking_active: boolean;
   subscription_status: string;
+  logo_url?: string | null;
 }
 
 interface PublicDoctor {
@@ -383,11 +384,9 @@ export default function PublicBooking() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
       <header className="bg-teal-700 text-white py-6 px-4">
         <div className="max-w-md mx-auto text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Heart className="w-6 h-6" />
+          <div className="flex flex-col items-center justify-center gap-3 mb-2">
             <span className="text-xl font-bold">{clinic.company_name}</span>
           </div>
           <p className="text-teal-100 text-sm">Agende sua consulta online</p>
@@ -461,10 +460,14 @@ export default function PublicBooking() {
                   >
                     <div className="flex items-center gap-4">
                       <div
-                        className="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold"
+                        className="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold overflow-hidden"
                         style={{ backgroundColor: doctor.color || "#0d9488" }}
                       >
-                        {doctor.name.charAt(0)}
+                        {doctor.avatar_url ? (
+                          <img src={doctor.avatar_url} alt={doctor.name} className="w-full h-full object-cover" />
+                        ) : (
+                          doctor.name.charAt(0)
+                        )}
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-slate-800">{doctor.name}</h3>
@@ -493,10 +496,14 @@ export default function PublicBooking() {
             <div className="bg-white rounded-xl p-4 border border-slate-200">
               <div className="flex items-center gap-3">
                 <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold overflow-hidden"
                   style={{ backgroundColor: selectedDoctor.color || "#0d9488" }}
                 >
-                  {selectedDoctor.name.charAt(0)}
+                  {selectedDoctor.avatar_url ? (
+                    <img src={selectedDoctor.avatar_url} alt={selectedDoctor.name} className="w-full h-full object-cover" />
+                  ) : (
+                    selectedDoctor.name.charAt(0)
+                  )}
                 </div>
                 <div>
                   <p className="font-semibold text-slate-800">{selectedDoctor.name}</p>
@@ -578,10 +585,14 @@ export default function PublicBooking() {
             <div className="bg-teal-50 rounded-xl p-4 border border-teal-200">
               <div className="flex items-center gap-3 mb-3">
                 <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold overflow-hidden"
                   style={{ backgroundColor: selectedDoctor?.color || "#0d9488" }}
                 >
-                  {selectedDoctor?.name.charAt(0)}
+                  {selectedDoctor?.avatar_url ? (
+                    <img src={selectedDoctor.avatar_url} alt={selectedDoctor.name} className="w-full h-full object-cover" />
+                  ) : (
+                    selectedDoctor?.name.charAt(0)
+                  )}
                 </div>
                 <div>
                   <p className="font-semibold text-slate-800">{selectedDoctor?.name}</p>

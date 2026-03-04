@@ -26,6 +26,7 @@ import {
   DaySchedule,
   defaultScheduleConfig
 } from "@/hooks/useDoctors";
+import { ImageUpload } from "@/components/shared/ImageUpload";
 import { cn } from "@/lib/utils";
 
 interface DoctorDialogProps {
@@ -70,6 +71,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
       name: "",
       specialty: "",
       color: "#06b6d4",
+      avatar_url: null,
       default_duration: 30,
       active: true,
     },
@@ -81,6 +83,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
         name: doctor.name,
         specialty: doctor.specialty,
         color: doctor.color,
+        avatar_url: doctor.avatar_url,
         default_duration: doctor.default_duration,
         active: doctor.active,
       });
@@ -90,6 +93,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
         name: "",
         specialty: "",
         color: "#06b6d4",
+        avatar_url: null,
         default_duration: 30,
         active: true,
       });
@@ -98,6 +102,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
   }, [doctor, reset]);
 
   const selectedColor = watch("color");
+  const avatarUrl = watch("avatar_url");
   const isActive = watch("active");
 
   const toggleWorkDay = (dayId: number) => {
@@ -222,6 +227,14 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
 
             {/* Tab: Dados Básicos */}
             <TabsContent value="dados" className="space-y-4 pt-4">
+              {/* Avatar Upload */}
+              <ImageUpload
+                label="Foto do Profissional"
+                value={avatarUrl}
+                onChange={(url) => setValue("avatar_url", url)}
+                folder="avatars"
+              />
+
               {/* Name */}
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-slate-700">Nome Completo *</Label>

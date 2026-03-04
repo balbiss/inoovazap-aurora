@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useInstance } from "@/hooks/useInstance";
+import { ImageUpload } from "@/components/shared/ImageUpload";
 
 
 interface ClinicFormData {
   company_name: string;
   full_name: string;
   phone: string;
+  logo_url?: string | null;
 }
 
 
@@ -23,7 +25,8 @@ export function ClinicSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const { register, handleSubmit, reset } = useForm<ClinicFormData>();
+  const { register, handleSubmit, reset, setValue, watch } = useForm<ClinicFormData>();
+  const logoUrl = watch("logo_url");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -51,6 +54,7 @@ export function ClinicSettings() {
           company_name: instance?.company_name || profile?.company_name || "",
           full_name: profile?.full_name || "",
           phone: profile?.phone || "",
+          logo_url: instance?.logo_url || null,
         });
 
       }
@@ -94,7 +98,8 @@ export function ClinicSettings() {
         const { error: instanceError } = await supabase
           .from("instances")
           .update({
-            company_name: data.company_name
+            company_name: data.company_name,
+            logo_url: data.logo_url
           })
           .eq("id", instance.id);
 
@@ -138,7 +143,15 @@ export function ClinicSettings() {
           </div>
           <h3 className="text-base font-semibold text-slate-800">Dados da Clínica</h3>
         </div>
-        <div className="p-6 grid gap-4 md:grid-cols-3">
+        <div className="p-6 grid gap-6 md:grid-cols-3">
+          <div className="md:col-span-3">
+            <ImageUpload
+              label="Logomarca da Clínica"
+              value={logoUrl}
+              onChange={(url) => setValue("logo_url", url)}
+              folder="logos"
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="company_name" className="text-slate-700">Nome da Clínica</Label>
             <Input
