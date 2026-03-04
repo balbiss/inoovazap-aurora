@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
                     }).replace(', ', ' às ')
 
                     const patientName = (pat.name || 'Paciente').trim()
-                    const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://inoovazap.com.br'
+                    const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://inoovasaude.inoovaweb.com.br'
 
                     const message = `Olá, *${patientName}*! 👋\n\nEste é um lembrete da sua consulta na *${inst.company_name}*.\n\n🩺 *Profissional:* Dr(a). ${doc.name}\n📅 *Data:* ${dateStr}\n\nPara garantir seu horário, pedimos a gentileza de confirmar sua presença clicando no link abaixo:\n\n🔗 ${frontendUrl}/confirmation/${apt.id}\n\nSua confirmação é muito importante para nós!\nAtenciosamente, equipe *${inst.company_name}* 💚`
 
