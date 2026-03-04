@@ -16,11 +16,13 @@ export function useInstance() {
       console.log("[useInstance] Step 2: User found:", user?.id);
       if (!user) return null;
 
-      console.log("[useInstance] Step 3: Querying instances table...");
+      console.log("[useInstance] Step 3: Querying instances table (limit 1)...");
       const { data, error } = await supabase
         .from("instances")
         .select("*")
         .eq("user_id", user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) {
