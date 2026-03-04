@@ -12,8 +12,10 @@ import {
     Link as LinkIcon,
     Copy,
     Save,
-    Loader2
+    Loader2,
+    ArrowRight
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,10 +29,14 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function AIBrain() {
     const { data: instance, isLoading, refetch } = useInstance();
+    const navigate = useNavigate();
     const [isSaving, setIsSaving] = useState(false);
+
+    const isPro = instance?.subscription_status === "active" || instance?.subscription_status === "trialing";
 
     // Form State
     const [nomeAgente, setNomeAgente] = useState("");
@@ -135,7 +141,8 @@ export default function AIBrain() {
     const publicLink = `${window.location.host}/book/${instance?.slug || "seu-slug"}`;
 
     return (
-        <div className="space-y-4 pb-20">
+        <div className="space-y-4 pb-20 relative">
+
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>

@@ -41,6 +41,7 @@ interface ClinicData {
   } | null;
   schedule_config: any;
   public_booking_active: boolean;
+  subscription_status: string;
 }
 
 interface PublicDoctor {
@@ -99,6 +100,7 @@ export default function PublicBooking() {
       const { data, error } = await supabase.rpc("get_clinic_by_slug", { p_slug: slug });
       if (error) throw error;
       if (!data || data.length === 0) return null;
+      console.log("Clinic data from RPC:", data[0]); // Debug log
       return data[0] as ClinicData;
     },
     enabled: !!slug,
@@ -169,14 +171,18 @@ export default function PublicBooking() {
     if (!selectedDoctor || !selectedDate) return [];
 
     const config = selectedDoctor.schedule_config;
+    const dayOfWeek = getDay(selectedDate);
+    const daySchedule = config.day_schedules?.[dayOfWeek];
+    const hours = daySchedule || config.hours;
+
     // Use doctor's default_duration as source of truth
     const duration = selectedDoctor.default_duration || 30;
     const slots: string[] = [];
 
-    const [openH, openM] = config.hours.open.split(":").map(Number);
-    const [closeH, closeM] = config.hours.close.split(":").map(Number);
-    const [lunchStartH, lunchStartM] = config.hours.lunch_start.split(":").map(Number);
-    const [lunchEndH, lunchEndM] = config.hours.lunch_end.split(":").map(Number);
+    const [openH, openM] = hours.open.split(":").map(Number);
+    const [closeH, closeM] = hours.close.split(":").map(Number);
+    const [lunchStartH, lunchStartM] = hours.lunch_start.split(":").map(Number);
+    const [lunchEndH, lunchEndM] = hours.lunch_end.split(":").map(Number);
 
     let currentH = openH;
     let currentM = openM;
@@ -306,7 +312,7 @@ export default function PublicBooking() {
   const handleSubmit = () => {
     const rawPhone = patientPhone.replace(/\D/g, "");
     const rawCPF = patientCPF.replace(/\D/g, "");
-    
+
     if (!patientName.trim() || rawPhone.length < 10 || rawCPF.length !== 11) {
       return;
     }
@@ -353,8 +359,11 @@ export default function PublicBooking() {
     );
   }
 
-  // Booking disabled
-  if (!clinic.public_booking_active) {
+  // Resilient isPro check: always true now
+  const isPro = true;
+
+  // Booking disabled or not Pro
+  if (!isPro || !clinic.public_booking_active) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
@@ -363,8 +372,9 @@ export default function PublicBooking() {
           </div>
           <h1 className="text-2xl font-bold text-slate-800 mb-2">Agendamento Online Indisponível</h1>
           <p className="text-slate-500">
-            {clinic.company_name} não está aceitando agendamentos online no momento.
-            Entre em contato diretamente com a clínica.
+            {!isPro
+              ? "Esta clínica está configurando o sistema. Por favor, tente novamente mais tarde."
+              : `${clinic.company_name} não está aceitando agendamentos online no momento.`}
           </p>
         </div>
       </div>

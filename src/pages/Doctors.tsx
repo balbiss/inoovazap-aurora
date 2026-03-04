@@ -5,13 +5,24 @@ import { DoctorCard } from "@/components/doctors/DoctorCard";
 import { DoctorList } from "@/components/doctors/DoctorList";
 import { DoctorDialog } from "@/components/doctors/DoctorDialog";
 import { useDoctors, Doctor } from "@/hooks/useDoctors";
+import { useInstance } from "@/hooks/useInstance";
+import { PatientDialog } from "@/components/patients/PatientDialog";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { useCreateAppointment } from "@/hooks/useAppointments";
 
 export default function Doctors() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const { data: doctors, isLoading } = useDoctors();
+  const { data: instance } = useInstance();
+  const createAppointment = useCreateAppointment();
+  const navigate = useNavigate();
+
 
   const handleEdit = (doctor: Doctor) => {
     setEditingDoctor(doctor);

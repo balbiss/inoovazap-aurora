@@ -50,12 +50,6 @@ export default function Settings() {
           >
             WhatsApp
           </TabsTrigger>
-          <TabsTrigger
-            value="subscription"
-            className="data-[state=active]:bg-white data-[state=active]:text-teal-700 data-[state=active]:shadow-sm"
-          >
-            Assinatura
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="clinic" className="mt-6">
@@ -75,9 +69,6 @@ export default function Settings() {
           <IntegrationSettings />
         </TabsContent>
 
-        <TabsContent value="subscription" className="mt-6">
-          <SubscriptionSettings />
-        </TabsContent>
       </Tabs>
     </div>
   );

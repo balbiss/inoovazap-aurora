@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Bell, Clock, Loader2, Save } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,9 +17,11 @@ interface AutomationConfig {
 
 export function WhatsAppAutomationSettings() {
     const { data: instance, refetch: refetchInstance } = useInstance();
-    const [enabled, setEnabled] = useState(false);
     const [leadTime, setLeadTime] = useState(24);
+    const [enabled, setEnabled] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const navigate = useNavigate();
+
 
     useEffect(() => {
         if (instance?.clinic_config) {
@@ -74,10 +77,14 @@ export function WhatsAppAutomationSettings() {
                         </p>
                     </div>
                 </div>
-                <Switch
-                    checked={enabled}
-                    onCheckedChange={setEnabled}
-                />
+                <div className="flex items-center gap-3">
+                    <Switch
+                        checked={enabled}
+                        onCheckedChange={(val) => {
+                            setEnabled(val);
+                        }}
+                    />
+                </div>
             </div>
 
             <div className={cn("p-6 space-y-6 transition-opacity duration-200", !enabled && "opacity-50 pointer-events-none")}>

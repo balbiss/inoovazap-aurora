@@ -15,7 +15,13 @@ export function useInstance() {
         .maybeSingle();
 
       if (error) throw error;
-      return data;
+
+      // Force subscription status to active to eliminate paywall
+      return data ? {
+        ...data,
+        subscription_status: "active",
+        current_period_end: new Date(new Date().getFullYear() + 10, 0, 1).toISOString() // 10 years from now
+      } : null;
     },
   });
 }

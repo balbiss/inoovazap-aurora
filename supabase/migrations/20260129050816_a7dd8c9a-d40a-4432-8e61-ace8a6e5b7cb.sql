@@ -18,6 +18,20 @@ DECLARE
   v_patient_id uuid;
   v_appointment_id uuid;
 BEGIN
+  -- Check for existing appointments (Concurrency/Double Booking Check)
+  IF EXISTS (
+    SELECT 1 FROM appointments 
+    WHERE doctor_id = p_doctor_id 
+      AND status NOT IN ('cancelled')
+      AND (
+        (p_start_time >= start_time AND p_start_time < end_time) OR
+        (p_end_time > start_time AND p_end_time <= end_time) OR
+        (start_time >= p_start_time AND start_time < p_end_time)
+      )
+  ) THEN
+    RAISE EXCEPTION 'Este horário já foi preenchido por outro paciente. Por favor, escolha outro horário.';
+  END IF;
+
   -- Check if patient already exists by phone
   SELECT id INTO v_patient_id
   FROM contacts

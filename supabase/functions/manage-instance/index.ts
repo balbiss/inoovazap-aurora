@@ -297,7 +297,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // ========== DELETE INSTANCE ==========
+    // ========== DELETE INSTANCE (Full Wiping) ==========
     if (action === 'delete') {
       if (!instance_id) {
         return new Response(
@@ -313,10 +313,44 @@ Deno.serve(async (req) => {
         console.log('Error deleting from Pastorini (may not exist):', e)
       }
 
-      // Delete from database
+      // Delete from database - WARNING: This triggers ON DELETE CASCADE and wipes all data!
       const { error } = await supabaseClient
         .from('instances')
         .delete()
+        .eq('pastorini_id', instance_id)
+        .eq('user_id', user.id)
+
+      if (error) {
+        console.error('Database error:', error)
+        throw new Error(error.message)
+      }
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // ========== LOGOUT INSTANCE (Keep Data) ==========
+    if (action === 'logout') {
+      if (!instance_id) {
+        return new Response(
+          JSON.stringify({ error: 'instance_id is required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Delete from Pastorini (this terminates the WhatsApp session)
+      try {
+        await callPastoriniApi(`/api/instances/${instance_id}`, 'DELETE')
+      } catch (e) {
+        console.log('Error logout from Pastorini:', e)
+      }
+
+      // Update status in database but KEEP the record
+      const { error } = await supabaseClient
+        .from('instances')
+        .update({ pastorini_status: 'disconnected' })
         .eq('pastorini_id', instance_id)
         .eq('user_id', user.id)
 

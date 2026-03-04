@@ -53,6 +53,11 @@ export function SubscriptionSettings() {
             setLoadingPlan(planId);
             toast.info("Preparando seu checkout...");
 
+            if (!instance?.id) {
+                toast.error("Informações da clínica não encontradas.");
+                return;
+            }
+
             const { data, error } = await supabase.functions.invoke("create-checkout", {
                 body: {
                     price_id: priceId,
@@ -77,6 +82,11 @@ export function SubscriptionSettings() {
         try {
             setLoadingPlan('manage');
             toast.info("Redirecionando para o Portal do Cliente...");
+
+            if (!instance?.id) {
+                toast.error("Informações da clínica não encontradas.");
+                return;
+            }
 
             const { data, error } = await supabase.functions.invoke("create-checkout", {
                 body: {
@@ -155,7 +165,7 @@ export function SubscriptionSettings() {
             </div>
 
             {/* Pricing Cards */}
-            {instance?.subscription_status !== "active" && (
+            {(instance?.subscription_status !== "active" && instance?.subscription_status !== "trialing") && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {PRICING_PLANS.map((plan) => (
                         <Card key={plan.id} className={`relative flex flex-col border-2 ${plan.popular ? 'border-teal-500 shadow-teal-50' : 'border-slate-200'} transition-all hover:shadow-md`}>

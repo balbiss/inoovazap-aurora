@@ -23,6 +23,7 @@ import {
   Doctor,
   DoctorInput,
   DoctorScheduleConfig,
+  DaySchedule,
   defaultScheduleConfig
 } from "@/hooks/useDoctors";
 import { cn } from "@/lib/utils";
@@ -59,6 +60,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
   const updateDoctor = useUpdateDoctor();
 
   const [scheduleConfig, setScheduleConfig] = useState<DoctorScheduleConfig>(defaultScheduleConfig);
+  const [selectedDayTab, setSelectedDayTab] = useState<number>(new Date().getDay() || 1);
   const [newBlockDate, setNewBlockDate] = useState<Date | undefined>(undefined);
   const [newBlockReason, setNewBlockReason] = useState("");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -133,6 +135,29 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
       ...prev,
       blocked_dates: prev.blocked_dates.filter((bd) => bd.date !== dateStr),
     }));
+  };
+
+  // Helper to get current hours for selected day
+  const currentDaySchedule = scheduleConfig.day_schedules?.[selectedDayTab] || scheduleConfig.hours;
+
+  const updateDaySchedule = (updates: Partial<DaySchedule>) => {
+    setScheduleConfig((prev) => {
+      const newDaySchedules = { ...(prev.day_schedules || {}) };
+      newDaySchedules[selectedDayTab] = {
+        ...(prev.day_schedules?.[selectedDayTab] || prev.hours),
+        ...updates
+      };
+      return { ...prev, day_schedules: newDaySchedules };
+    });
+  };
+
+  const applyToAllDays = () => {
+    setScheduleConfig(prev => ({
+      ...prev,
+      hours: currentDaySchedule,
+      day_schedules: {} // Reset overrides to use new global default
+    }));
+    toast.success("Horário aplicado a todos os dias!");
   };
 
   const onSubmit = async (data: DoctorInput) => {
@@ -279,7 +304,10 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                     <button
                       key={day.id}
                       type="button"
-                      onClick={() => toggleWorkDay(day.id)}
+                      onClick={() => {
+                        toggleWorkDay(day.id);
+                        setSelectedDayTab(day.id);
+                      }}
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border",
                         scheduleConfig.work_days.includes(day.id)
@@ -293,6 +321,42 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                 </div>
               </div>
 
+              {/* Day Selector for Timing */}
+              <div className="space-y-3 pt-4 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <Label className="text-slate-700 font-medium">Configurar Horários para:</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-[10px] h-6 text-teal-600 hover:text-teal-700 p-0"
+                    onClick={applyToAllDays}
+                  >
+                    Aplicar este horário a todos os dias
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {WEEK_DAYS.filter(d => scheduleConfig.work_days.includes(d.id)).map((day) => (
+                    <button
+                      key={day.id}
+                      type="button"
+                      onClick={() => setSelectedDayTab(day.id)}
+                      className={cn(
+                        "px-2.5 py-1 rounded-md text-xs font-semibold transition-all",
+                        selectedDayTab === day.id
+                          ? "bg-teal-100 text-teal-700 ring-1 ring-teal-500"
+                          : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                      )}
+                    >
+                      {day.label}
+                    </button>
+                  ))}
+                  {scheduleConfig.work_days.length === 0 && (
+                    <p className="text-[11px] text-slate-400 italic">Selecione os dias de trabalho acima primeiro</p>
+                  )}
+                </div>
+              </div>
+
               {/* Presets */}
               <div className="space-y-3 pt-2 border-t border-slate-100">
                 <Label className="text-slate-700 font-medium text-xs uppercase tracking-wider">Atalhos de Horário</Label>
@@ -303,10 +367,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                     size="sm"
                     className="text-xs h-7"
                     onClick={() => {
-                      setScheduleConfig(prev => ({
-                        ...prev,
-                        hours: { open: "08:00", close: "12:00", lunch_start: "12:00", lunch_end: "12:00" }
-                      }));
+                      updateDaySchedule({ open: "08:00", close: "12:00", lunch_start: "12:00", lunch_end: "12:00" });
                     }}
                   >
                     Manhã (08-12)
@@ -317,10 +378,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                     size="sm"
                     className="text-xs h-7"
                     onClick={() => {
-                      setScheduleConfig(prev => ({
-                        ...prev,
-                        hours: { open: "13:00", close: "18:00", lunch_start: "13:00", lunch_end: "13:00" }
-                      }));
+                      updateDaySchedule({ open: "13:00", close: "18:00", lunch_start: "13:00", lunch_end: "13:00" });
                     }}
                   >
                     Tarde (13-18)
@@ -331,10 +389,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                     size="sm"
                     className="text-xs h-7"
                     onClick={() => {
-                      setScheduleConfig(prev => ({
-                        ...prev,
-                        hours: { open: "08:00", close: "18:00", lunch_start: "12:00", lunch_end: "13:00" }
-                      }));
+                      updateDaySchedule({ open: "08:00", close: "18:00", lunch_start: "12:00", lunch_end: "13:00" });
                     }}
                   >
                     Dia Todo (08-18 c/ Almoço)
@@ -349,13 +404,8 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                   <div className="relative">
                     <Input
                       type="time"
-                      value={scheduleConfig.hours.open}
-                      onChange={(e) =>
-                        setScheduleConfig((prev) => ({
-                          ...prev,
-                          hours: { ...prev.hours, open: e.target.value },
-                        }))
-                      }
+                      value={currentDaySchedule.open}
+                      onChange={(e) => updateDaySchedule({ open: e.target.value })}
                       className="border-slate-200"
                     />
                     <Clock className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -366,13 +416,8 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                   <div className="relative">
                     <Input
                       type="time"
-                      value={scheduleConfig.hours.close}
-                      onChange={(e) =>
-                        setScheduleConfig((prev) => ({
-                          ...prev,
-                          hours: { ...prev.hours, close: e.target.value },
-                        }))
-                      }
+                      value={currentDaySchedule.close}
+                      onChange={(e) => updateDaySchedule({ close: e.target.value })}
                       className="border-slate-200"
                     />
                     <Clock className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -387,38 +432,27 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                   <p className="text-xs text-slate-500">Bloqueia agendamentos neste horário</p>
                 </div>
                 <Switch
-                  checked={scheduleConfig.hours.lunch_start !== scheduleConfig.hours.lunch_end}
+                  checked={currentDaySchedule.lunch_start !== currentDaySchedule.lunch_end}
                   onCheckedChange={(checked) => {
                     if (checked) {
-                      setScheduleConfig(prev => ({
-                        ...prev,
-                        hours: { ...prev.hours, lunch_start: "12:00", lunch_end: "13:00" }
-                      }));
+                      updateDaySchedule({ lunch_start: "12:00", lunch_end: "13:00" });
                     } else {
-                      setScheduleConfig(prev => ({
-                        ...prev,
-                        hours: { ...prev.hours, lunch_start: prev.hours.open, lunch_end: prev.hours.open }
-                      }));
+                      updateDaySchedule({ lunch_start: currentDaySchedule.open, lunch_end: currentDaySchedule.open });
                     }
                   }}
                 />
               </div>
 
               {/* Lunch Hours (Conditional) */}
-              {(scheduleConfig.hours.lunch_start !== scheduleConfig.hours.lunch_end) && (
+              {(currentDaySchedule.lunch_start !== currentDaySchedule.lunch_end) && (
                 <div className="grid gap-4 grid-cols-2 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="space-y-2">
                     <Label className="text-slate-700">Início Almoço</Label>
                     <div className="relative">
                       <Input
                         type="time"
-                        value={scheduleConfig.hours.lunch_start}
-                        onChange={(e) =>
-                          setScheduleConfig((prev) => ({
-                            ...prev,
-                            hours: { ...prev.hours, lunch_start: e.target.value },
-                          }))
-                        }
+                        value={currentDaySchedule.lunch_start}
+                        onChange={(e) => updateDaySchedule({ lunch_start: e.target.value })}
                         className="border-slate-200"
                       />
                       <Clock className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -429,13 +463,8 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                     <div className="relative">
                       <Input
                         type="time"
-                        value={scheduleConfig.hours.lunch_end}
-                        onChange={(e) =>
-                          setScheduleConfig((prev) => ({
-                            ...prev,
-                            hours: { ...prev.hours, lunch_end: e.target.value },
-                          }))
-                        }
+                        value={currentDaySchedule.lunch_end}
+                        onChange={(e) => updateDaySchedule({ lunch_end: e.target.value })}
                         className="border-slate-200"
                       />
                       <Clock className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />

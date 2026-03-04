@@ -7,7 +7,9 @@ import {
   Plus,
   QrCode,
   RefreshCw,
+  ArrowRight,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { WhatsAppAutomationSettings } from "./WhatsAppAutomationSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -61,6 +63,7 @@ export function IntegrationSettings() {
   const [qrError, setQrError] = useState<string | null>(null);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const qrRetryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const navigate = useNavigate();
 
   const queryClient = useQueryClient();
 
@@ -108,6 +111,7 @@ export function IntegrationSettings() {
       setConnectionState("offline");
     }
   }, [instancesData, loadingInstances]);
+
 
   useEffect(() => {
     if (statusData?.status === "CONNECTED" || statusData?.status === "open") {
@@ -253,6 +257,7 @@ export function IntegrationSettings() {
   const handleOpenQrModal = async () => {
     if (!instanceData?.pastorini_id) return;
 
+
     setIsQrModalOpen(true);
     setIsRefreshingQr(true);
     setQrError(null);
@@ -300,16 +305,14 @@ export function IntegrationSettings() {
 
     try {
       await supabase.functions.invoke("manage-instance", {
-        body: { action: "delete", instance_id: instanceData.pastorini_id },
+        body: { action: "logout", instance_id: instanceData.pastorini_id },
       });
 
-      setInstanceData(null);
       setQrCode(null);
-      setInstanceName("");
-      setConnectionState("offline");
+      setConnectionState("pending"); // Change to pending instead of offline since the instance still exists
       queryClient.invalidateQueries({ queryKey: ["user-instances"] });
 
-      toast.success("Desconectado");
+      toast.success("Desconectado (Agendamentos preservados)");
     } catch (error: any) {
       toast.error("Erro ao desconectar", { description: error.message });
     }
@@ -327,26 +330,24 @@ export function IntegrationSettings() {
     <>
       {/* Offline State */}
       {connectionState === "offline" && (
-        <GlassCard className="flex flex-col items-center justify-center py-12 px-8">
+        <GlassCard className="flex flex-col items-center justify-center py-12 px-8 text-center bg-slate-50/10">
           <div className="w-20 h-20 rounded-full bg-muted/30 flex items-center justify-center mb-6">
             <MessageCircle className="w-10 h-10 text-muted-foreground" />
           </div>
 
-          <Badge variant="destructive" className="mb-4">Desconectado</Badge>
 
           <h2 className="text-xl font-semibold text-foreground mb-2">
-            Nenhuma conexão ativa
+            Configurar Conexão WhatsApp
           </h2>
-          <p className="text-muted-foreground text-center mb-6 max-w-md">
-            Conecte seu número de WhatsApp para enviar lembretes de consulta.
+          <p className="text-muted-foreground mb-6 max-w-md">
+            Sua clínica já está registrada, mas para usar o WhatsApp você precisa configurar sua instância.
           </p>
 
           <Button
             onClick={() => setIsNameModalOpen(true)}
-            className="bg-gradient-to-r from-emerald-600 to-cyan-600 text-white"
+            className="bg-teal-600 hover:bg-teal-700 text-white gap-2 h-12 px-8"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Adicionar WhatsApp
+            Configurar Instância
           </Button>
         </GlassCard>
       )}

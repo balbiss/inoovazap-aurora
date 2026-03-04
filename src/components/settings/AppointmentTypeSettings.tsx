@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, ClipboardList, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,8 @@ export function AppointmentTypeSettings() {
     const [newType, setNewType] = useState("");
     const [returnDays, setReturnDays] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+    const navigate = useNavigate();
+
 
     useEffect(() => {
         if (instance?.clinic_config) {
@@ -146,7 +149,7 @@ export function AppointmentTypeSettings() {
                         }}
                     />
                     <Button
-                        onClick={handleAddType}
+                        onClick={() => handleAddType()}
                         disabled={isSaving || !newType.trim()}
                         className="bg-teal-600 hover:bg-teal-700 text-white"
                     >
@@ -212,7 +215,7 @@ export function AppointmentTypeSettings() {
                             </p>
                         </div>
                         <Button
-                            onClick={handleSaveReturnDays}
+                            onClick={() => handleSaveReturnDays()}
                             disabled={isSaving}
                             variant="outline"
                             className="border-teal-200 text-teal-700 hover:bg-teal-50"

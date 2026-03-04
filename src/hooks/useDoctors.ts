@@ -3,14 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useInstance } from "./useInstance";
 import { Json } from "@/integrations/supabase/types";
 
+export interface DaySchedule {
+  open: string;
+  close: string;
+  lunch_start: string;
+  lunch_end: string;
+}
+
 export interface DoctorScheduleConfig {
   work_days: number[];
-  hours: {
-    open: string;
-    close: string;
-    lunch_start: string;
-    lunch_end: string;
-  };
+  hours: DaySchedule;
+  day_schedules?: Record<number, DaySchedule>;
   blocked_dates: { date: string; reason: string }[];
 }
 

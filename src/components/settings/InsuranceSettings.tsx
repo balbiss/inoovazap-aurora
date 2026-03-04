@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Shield, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,8 @@ export function InsuranceSettings() {
   const [insuranceTypes, setInsuranceTypes] = useState<InsuranceType[]>([]);
   const [newInsurance, setNewInsurance] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const navigate = useNavigate();
+
 
   useEffect(() => {
     if (instance?.clinic_config) {
@@ -114,7 +117,7 @@ export function InsuranceSettings() {
             }}
           />
           <Button
-            onClick={handleAddInsurance}
+            onClick={() => handleAddInsurance()}
             disabled={isSaving || !newInsurance.trim()}
             className="bg-teal-600 hover:bg-teal-700 text-white"
           >

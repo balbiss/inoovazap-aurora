@@ -5,6 +5,9 @@ import { MobileHeader } from "./MobileHeader";
 import { NotificationManager } from "@/components/notifications/NotificationManager";
 import { FAB } from "@/components/ui/FAB";
 import { NewAppointmentDialog } from "@/components/schedule/NewAppointmentDialog";
+import { useInstance } from "@/hooks/useInstance";
+import { WelcomeClinicModal } from "@/components/auth/WelcomeClinicModal";
+import { Loader2 } from "lucide-react";
 
 interface LayoutWrapperProps {
   children: ReactNode;
@@ -12,10 +15,24 @@ interface LayoutWrapperProps {
 
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
+  const { data: instance, isLoading } = useInstance();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+      </div>
+    );
+  }
+
+  const hasNoClinic = !instance;
 
   return (
     <div className="min-h-screen bg-slate-50">
       <NotificationManager />
+
+      {/* Welcome Modal for new users */}
+      <WelcomeClinicModal open={hasNoClinic} />
 
       {/* Desktop Sidebar - Hidden on mobile */}
       <div className="hidden md:block">

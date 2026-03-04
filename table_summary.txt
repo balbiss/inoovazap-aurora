@@ -1,0 +1,9 @@
+--- Table Summary ---
+appointments: 0 rows
+contacts: 0 rows
+doctors: 0 rows
+instances: 0 rows
+profiles: 0 rows
+n8n_historico_transferencias: null rows
+patients: null rows
+doctor_availability: null rows

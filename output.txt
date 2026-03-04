@@ -1,0 +1,5 @@
+appointments: data=[], error=none
+contacts: data=[], error=none
+doctors: data=[], error=none
+instances: data=[], error=none
+profiles: data=[], error=none

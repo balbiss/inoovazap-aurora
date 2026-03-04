@@ -36,6 +36,8 @@ import { useCreateAppointment } from "@/hooks/useAppointments";
 import { useInstance } from "@/hooks/useInstance";
 import { PatientDialog } from "@/components/patients/PatientDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface NewAppointmentDialogProps {
   open: boolean;
@@ -73,12 +75,17 @@ const durations = [
 ];
 
 // Generate time slots based on doctor's schedule and duration
-function generateTimeSlots(config: DoctorScheduleConfig, duration: number): string[] {
+function generateTimeSlots(config: DoctorScheduleConfig, duration: number, date?: Date): string[] {
+  const dayOfWeek = date ? getDay(date) : null;
+  const hours = (dayOfWeek !== null && config.day_schedules?.[dayOfWeek])
+    ? config.day_schedules[dayOfWeek]
+    : config.hours;
+
   const slots: string[] = [];
-  const [openH, openM] = config.hours.open.split(":").map(Number);
-  const [closeH, closeM] = config.hours.close.split(":").map(Number);
-  const [lunchStartH, lunchStartM] = config.hours.lunch_start.split(":").map(Number);
-  const [lunchEndH, lunchEndM] = config.hours.lunch_end.split(":").map(Number);
+  const [openH, openM] = hours.open.split(":").map(Number);
+  const [closeH, closeM] = hours.close.split(":").map(Number);
+  const [lunchStartH, lunchStartM] = hours.lunch_start.split(":").map(Number);
+  const [lunchEndH, lunchEndM] = hours.lunch_end.split(":").map(Number);
 
   let currentH = openH;
   let currentM = openM;
@@ -130,6 +137,8 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
   const { data: patients } = usePatients(patientSearch);
   const { data: instance } = useInstance();
   const createAppointment = useCreateAppointment();
+  const navigate = useNavigate();
+
 
   // Get selected doctor
   const selectedDoctor = useMemo(() => {
@@ -184,7 +193,7 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
       });
     }
 
-    const allSlots = generateTimeSlots(selectedDoctor.schedule_config, selectedDoctor.default_duration);
+    const allSlots = generateTimeSlots(selectedDoctor.schedule_config, selectedDoctor.default_duration, selectedDate || undefined);
 
     if (!selectedDate || !busySlots || busySlots.length === 0) {
       return allSlots;
@@ -259,6 +268,7 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
 
     const endTime = new Date(startTime);
     endTime.setMinutes(endTime.getMinutes() + parseInt(duration));
+
 
     try {
       await createAppointment.mutateAsync({
@@ -335,10 +345,21 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
                 <div className="flex items-center gap-2 text-slate-600">
                   <Clock className="w-3.5 h-3.5 text-teal-600" />
                   <span>
-                    <strong>Horário:</strong> {selectedDoctor.schedule_config.hours.open} - {selectedDoctor.schedule_config.hours.close}
-                    <span className="text-slate-400 ml-1">
-                      (almoço: {selectedDoctor.schedule_config.hours.lunch_start} - {selectedDoctor.schedule_config.hours.lunch_end})
-                    </span>
+                    {(() => {
+                      const dayOfWeek = selectedDate ? getDay(selectedDate) : null;
+                      const hours = (dayOfWeek !== null && selectedDoctor.schedule_config.day_schedules?.[dayOfWeek])
+                        ? selectedDoctor.schedule_config.day_schedules[dayOfWeek]
+                        : selectedDoctor.schedule_config.hours;
+
+                      return (
+                        <>
+                          <strong>Horário {selectedDate ? `(${dayNames[dayOfWeek!]})` : '(Padrão)'}:</strong> {hours.open} - {hours.close}
+                          <span className="text-slate-400 ml-1">
+                            (almoço: {hours.lunch_start} - {hours.lunch_end})
+                          </span>
+                        </>
+                      );
+                    })()}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -559,12 +580,10 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={createAppointment.isPending || !isWorkDay || isBlockedDate}
-            className="bg-teal-600 hover:bg-teal-700 text-white"
+            disabled={createAppointment.isPending || (!isWorkDay || isBlockedDate)}
+            className="gap-2 bg-teal-600 hover:bg-teal-700 text-white"
           >
-            {createAppointment.isPending ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : null}
+            {createAppointment.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             Agendar
           </Button>
         </div>

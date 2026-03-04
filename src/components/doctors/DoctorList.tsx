@@ -59,9 +59,13 @@ export function DoctorList({ doctors, onEdit }: DoctorListProps) {
           <tbody className="divide-y divide-slate-100">
             {doctors.map((doctor) => {
               const workDaysLabel = doctor.schedule_config.work_days
+                .sort((a, b) => a - b)
                 .map((d) => WEEK_DAYS_SHORT[d])
                 .join(", ");
-              const hoursLabel = `${doctor.schedule_config.hours.open} - ${doctor.schedule_config.hours.close}`;
+              const hasCustomSchedules = !!doctor.schedule_config.day_schedules && Object.keys(doctor.schedule_config.day_schedules).length > 0;
+              const hoursLabel = hasCustomSchedules
+                ? "Horários variados"
+                : `${doctor.schedule_config.hours.open} - ${doctor.schedule_config.hours.close}`;
               const blockedCount = doctor.schedule_config.blocked_dates.length;
 
               return (
