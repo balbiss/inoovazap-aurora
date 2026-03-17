@@ -77,9 +77,9 @@ const durations = [
 // Generate time slots based on doctor's schedule and duration
 function generateTimeSlots(config: DoctorScheduleConfig, duration: number, date?: Date): string[] {
   const dayOfWeek = date ? getDay(date) : null;
-  const hours = (dayOfWeek !== null && config.day_schedules?.[dayOfWeek])
+  const hours = (dayOfWeek !== null && config?.day_schedules?.[dayOfWeek])
     ? config.day_schedules[dayOfWeek]
-    : config.hours;
+    : (config?.hours || { open: "08:00", close: "18:00", lunch_start: "12:00", lunch_end: "13:00" });
 
   const slots: string[] = [];
   const [openH, openM] = hours.open.split(":").map(Number);
@@ -223,14 +223,14 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
 
   // Check if selected date is a work day for the doctor
   const isWorkDay = useMemo(() => {
-    if (!selectedDate || !selectedDoctor?.schedule_config) return true;
+    if (!selectedDate || !selectedDoctor?.schedule_config?.work_days) return true;
     const dayOfWeek = getDay(selectedDate);
     return selectedDoctor.schedule_config.work_days.includes(dayOfWeek);
   }, [selectedDate, selectedDoctor]);
 
   // Check if selected date is blocked
   const isBlockedDate = useMemo(() => {
-    if (!selectedDate || !selectedDoctor?.schedule_config) return false;
+    if (!selectedDate || !selectedDoctor?.schedule_config?.blocked_dates) return false;
     const dateStr = format(selectedDate, "yyyy-MM-dd");
     return selectedDoctor.schedule_config.blocked_dates.some((b) => b.date === dateStr);
   }, [selectedDate, selectedDoctor]);
@@ -365,20 +365,20 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
                 <div className="flex items-center gap-2">
                   <span className="text-slate-600"><strong>Dias:</strong></span>
                   <div className="flex gap-1">
-                    {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-                      <Badge
-                        key={day}
-                        variant="outline"
-                        className={cn(
-                          "text-[10px] px-1.5 py-0",
-                          selectedDoctor.schedule_config.work_days.includes(day)
-                            ? "bg-teal-50 text-teal-700 border-teal-200"
-                            : "bg-slate-100 text-slate-400 border-slate-200"
-                        )}
-                      >
-                        {dayNames[day]}
-                      </Badge>
-                    ))}
+                      {[0, 1, 2, 3, 4, 5, 6].map((day) => (
+                        <Badge
+                          key={day}
+                          variant="outline"
+                          className={cn(
+                            "text-[10px] px-1.5 py-0",
+                            (selectedDoctor.schedule_config?.work_days || []).includes(day)
+                              ? "bg-teal-50 text-teal-700 border-teal-200"
+                              : "bg-slate-100 text-slate-400 border-slate-200"
+                          )}
+                        >
+                          {dayNames[day]}
+                        </Badge>
+                      ))}
                   </div>
                 </div>
                 <div className="text-slate-500">
@@ -493,11 +493,11 @@ export function NewAppointmentDialog({ open, onOpenChange, defaultDate }: NewApp
                   onSelect={setSelectedDate}
                   locale={ptBR}
                   disabled={(date) => {
-                    if (!selectedDoctor) return false;
+                    if (!selectedDoctor?.schedule_config) return false;
                     const dayOfWeek = getDay(date);
-                    const isWorkDay = selectedDoctor.schedule_config.work_days.includes(dayOfWeek);
+                    const isWorkDay = (selectedDoctor.schedule_config.work_days || []).includes(dayOfWeek);
                     const dateStr = format(date, "yyyy-MM-dd");
-                    const isBlocked = selectedDoctor.schedule_config.blocked_dates.some((b) => b.date === dateStr);
+                    const isBlocked = (selectedDoctor.schedule_config.blocked_dates || []).some((b) => b.date === dateStr);
                     return !isWorkDay || isBlocked;
                   }}
                 />
