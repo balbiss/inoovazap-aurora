@@ -74,18 +74,18 @@ export function ImageUpload({ value, onChange, folder, className, label }: Image
             <div className="flex items-center gap-4">
                 <div className="relative group">
                     <div className={cn(
-                        "w-20 h-20 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50 transition-colors group-hover:border-teal-400",
-                        value && "border-solid border-teal-500"
+                        "w-32 h-32 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50/50 transition-all group-hover:border-teal-400 group-hover:bg-slate-50",
+                        value && "border-solid border-teal-500 shadow-sm"
                     )}>
                         {value ? (
-                            <img src={value} alt="Preview" className="w-full h-full object-cover" />
+                            <img src={value} alt="Preview" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                         ) : (
-                            <ImageIcon className="w-8 h-8 text-slate-400" />
+                            <ImageIcon className="w-10 h-10 text-slate-300" />
                         )}
 
                         {isUploading && (
-                            <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                                <Loader2 className="w-6 h-6 text-teal-600 animate-spin" />
+                            <div className="absolute inset-0 bg-white/90 backdrop-blur-[1px] flex items-center justify-center">
+                                <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
                             </div>
                         )}
                     </div>

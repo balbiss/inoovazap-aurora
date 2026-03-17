@@ -71,23 +71,27 @@ export function ClinicSettings() {
       if (!user) throw new Error("Usuário não autenticado");
 
       // Update or Create profile using upsert
+      // Pick only existing columns for the profiles table to avoid 400 error
+      const profileData = {
+        user_id: user.id,
+        full_name: data.full_name,
+        phone: data.phone,
+        company_name: data.company_name,
+        avatar_url: data.logo_url, // Map logo_url to avatar_url for profiles
+        updated_at: new Date().toISOString()
+      };
+
       const { error: profileError } = await supabase
         .from("profiles")
-        .upsert({
-          user_id: user.id,
-          ...data,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id' });
+        .upsert(profileData, { onConflict: 'user_id' });
 
       if (profileError) {
-        // If upsert with user_id fails, try with id as fallback
+        // Fallback for cases where id might be the preferred conflict key
         const { error: profileFallbackError } = await supabase
           .from("profiles")
           .upsert({
             id: user.id,
-            user_id: user.id,
-            ...data,
-            updated_at: new Date().toISOString()
+            ...profileData
           }, { onConflict: 'id' });
 
         if (profileFallbackError) throw profileFallbackError;
