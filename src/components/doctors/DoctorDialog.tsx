@@ -204,16 +204,17 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-w-lg p-0 overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh]">
+        <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle>
             {isEditing ? "Editar Profissional" : "Adicionar Profissional"}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
-          <Tabs defaultValue="dados" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-slate-100">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-6 py-2">
+            <Tabs defaultValue="dados" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 bg-slate-100 sticky top-0 z-10">
               <TabsTrigger
                 value="dados"
                 className="data-[state=active]:bg-white data-[state=active]:text-teal-700"
@@ -571,21 +572,22 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
               )}
             </TabsContent>
           </Tabs>
+        </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2 pt-4 border-t border-slate-200">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={isPending}
-              className="bg-teal-600 hover:bg-teal-700 text-white"
-            >
-              {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {isEditing ? "Salvar" : "Criar"}
-            </Button>
-          </div>
+        {/* Actions */}
+        <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200 bg-white mt-auto">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={isPending}
+            className="bg-teal-600 hover:bg-teal-700 text-white"
+          >
+            {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {isEditing ? "Salvar" : "Criar"}
+          </Button>
+        </div>
         </form>
       </DialogContent>
     </Dialog>
