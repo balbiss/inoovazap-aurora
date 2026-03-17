@@ -87,7 +87,16 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
         default_duration: doctor.default_duration,
         active: doctor.active,
       });
-      setScheduleConfig(doctor.schedule_config || defaultScheduleConfig);
+      // Safety: ensure schedule_config has all fields even if doctor object has it missing or null
+      setScheduleConfig({
+        ...defaultScheduleConfig,
+        ...(doctor.schedule_config || {}),
+        hours: { 
+          ...defaultScheduleConfig.hours, 
+          ...(doctor.schedule_config?.hours || {}) 
+        },
+        blocked_dates: doctor.schedule_config?.blocked_dates || [],
+      });
     } else {
       reset({
         name: "",
@@ -138,7 +147,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
   const removeBlockedDate = (dateStr: string) => {
     setScheduleConfig((prev) => ({
       ...prev,
-      blocked_dates: prev.blocked_dates.filter((bd) => bd.date !== dateStr),
+      blocked_dates: (prev.blocked_dates || []).filter((bd) => bd.date !== dateStr),
     }));
   };
 
@@ -323,7 +332,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                       }}
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border",
-                        scheduleConfig.work_days.includes(day.id)
+                        (scheduleConfig.work_days || []).includes(day.id)
                           ? "bg-teal-600 text-white border-teal-600"
                           : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
                       )}
@@ -349,7 +358,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {WEEK_DAYS.filter(d => scheduleConfig.work_days.includes(d.id)).map((day) => (
+                  {WEEK_DAYS.filter(d => (scheduleConfig.work_days || []).includes(d.id)).map((day) => (
                     <button
                       key={day.id}
                       type="button"
@@ -364,7 +373,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                       {day.label}
                     </button>
                   ))}
-                  {scheduleConfig.work_days.length === 0 && (
+                  {(scheduleConfig.work_days || []).length === 0 && (
                     <p className="text-[11px] text-slate-400 italic">Selecione os dias de trabalho acima primeiro</p>
                   )}
                 </div>
