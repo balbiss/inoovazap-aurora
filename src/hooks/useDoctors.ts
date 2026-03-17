@@ -64,7 +64,20 @@ function transformDoctor(row: {
   created_at: string | null;
   schedule_config: Json | null;
 }): Doctor {
-  const scheduleConfig = row.schedule_config as unknown as DoctorScheduleConfig | null;
+  const rowConfig = row.schedule_config as any;
+  
+  const schedule_config: DoctorScheduleConfig = {
+    work_days: Array.isArray(rowConfig?.work_days) ? rowConfig.work_days : defaultScheduleConfig.work_days,
+    hours: {
+      open: rowConfig?.hours?.open || defaultScheduleConfig.hours.open,
+      close: rowConfig?.hours?.close || defaultScheduleConfig.hours.close,
+      lunch_start: rowConfig?.hours?.lunch_start || defaultScheduleConfig.hours.lunch_start,
+      lunch_end: rowConfig?.hours?.lunch_end || defaultScheduleConfig.hours.lunch_end,
+    },
+    day_schedules: rowConfig?.day_schedules || {},
+    blocked_dates: Array.isArray(rowConfig?.blocked_dates) ? rowConfig.blocked_dates : [],
+  };
+
   return {
     id: row.id,
     instance_id: row.instance_id,
@@ -75,12 +88,7 @@ function transformDoctor(row: {
     default_duration: row.default_duration || 30,
     active: row.active ?? true,
     created_at: row.created_at || new Date().toISOString(),
-    schedule_config: scheduleConfig ? {
-      ...defaultScheduleConfig,
-      ...scheduleConfig,
-      hours: { ...defaultScheduleConfig.hours, ...(scheduleConfig.hours || {}) },
-      blocked_dates: scheduleConfig.blocked_dates || [],
-    } : defaultScheduleConfig,
+    schedule_config,
   };
 }
 
