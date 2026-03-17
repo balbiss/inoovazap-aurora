@@ -1,3 +1,13 @@
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar, Clock, User, Stethoscope, MoreVertical, Check, X, AlertCircle, Trash2, MessageCircle, History } from "lucide-react";
@@ -246,7 +256,87 @@ export function AppointmentList({ appointments, isLoading }: AppointmentListProp
 
                     {/* Right: Status & Actions */}
                     <div className="flex items-center gap-2">
-                      <Badge className={cn("px-3 py-1 border-0 rounded-full font-bold", status.className)}>
+                      {/* Mobile Status Trigger */}
+                      <div className="md:hidden">
+                        <Drawer>
+                          <DrawerTrigger asChild>
+                            <button className="text-left focus:outline-none focus:ring-2 focus:ring-teal-500 rounded-full">
+                              <Badge className={cn("px-3 py-1 border-0 rounded-full font-bold whitespace-nowrap", status.className)}>
+                                {status.label}
+                              </Badge>
+                            </button>
+                          </DrawerTrigger>
+                          <DrawerContent>
+                            <DrawerHeader className="text-left">
+                              <DrawerTitle>Atualizar Status</DrawerTitle>
+                              <DrawerDescription>
+                                Escolha o novo status para {apt.patient?.name}
+                              </DrawerDescription>
+                            </DrawerHeader>
+                            <div className="p-4 grid grid-cols-1 gap-3">
+                              <DrawerClose asChild>
+                                <Button 
+                                  variant="outline" 
+                                  className="h-14 justify-start text-lg border-emerald-100 text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
+                                  onClick={() => handleStatusChange(apt.id, "confirmed")}
+                                >
+                                  <Check className="w-6 h-6 mr-3" />
+                                  Confirmar Presença
+                                </Button>
+                              </DrawerClose>
+                              <DrawerClose asChild>
+                                <Button 
+                                  variant="outline" 
+                                  className="h-14 justify-start text-lg border-slate-100 text-slate-700 bg-slate-50 hover:bg-slate-100"
+                                  onClick={() => handleStatusChange(apt.id, "completed")}
+                                >
+                                  <Check className="w-6 h-6 mr-3" />
+                                  Concluir Atendimento
+                                </Button>
+                              </DrawerClose>
+                              <DrawerClose asChild>
+                                <Button 
+                                  variant="outline" 
+                                  className="h-14 justify-start text-lg border-rose-100 text-rose-700 bg-rose-50 hover:bg-rose-100"
+                                  onClick={() => handleStatusChange(apt.id, "cancelled")}
+                                >
+                                  <X className="w-6 h-6 mr-3" />
+                                  Cancelar Agendamento
+                                </Button>
+                              </DrawerClose>
+                              <DrawerClose asChild>
+                                <Button 
+                                  variant="outline" 
+                                  className="h-14 justify-start text-lg border-amber-100 text-amber-700 bg-amber-50 hover:bg-amber-100"
+                                  onClick={() => handleStatusChange(apt.id, "no_show")}
+                                >
+                                  <AlertCircle className="w-6 h-6 mr-3" />
+                                  Paciente não veio (Falta)
+                                </Button>
+                              </DrawerClose>
+                              
+                              <div className="pt-4 border-t border-slate-100">
+                                <Button 
+                                  variant="ghost" 
+                                  className="w-full h-12 justify-center text-teal-600 font-semibold"
+                                  onClick={() => handleSendWhatsApp(apt)}
+                                >
+                                  <MessageCircle className="w-5 h-5 mr-2" />
+                                  Enviar WhatsApp Manual
+                                </Button>
+                              </div>
+                            </div>
+                            <DrawerFooter className="pt-2">
+                              <DrawerClose asChild>
+                                <Button variant="ghost">Fechar</Button>
+                              </DrawerClose>
+                            </DrawerFooter>
+                          </DrawerContent>
+                        </Drawer>
+                      </div>
+
+                      {/* Desktop Status Badge (Non-clickable statically, actions in dropdown) */}
+                      <Badge className={cn("hidden md:block px-3 py-1 border-0 rounded-full font-bold", status.className)}>
                         {status.label}
                       </Badge>
 
