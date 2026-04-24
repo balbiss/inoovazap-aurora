@@ -204,15 +204,15 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg p-0 overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh]">
-        <DialogHeader className="px-6 pt-6 pb-2">
+      <DialogContent className="w-[95vw] sm:max-w-lg p-0 overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[85vh]">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>
             {isEditing ? "Editar Profissional" : "Adicionar Profissional"}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-6 py-2">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-6 py-2 pb-6 custom-scrollbar">
             <Tabs defaultValue="dados" className="w-full">
               <TabsList className="grid w-full grid-cols-3 bg-slate-100 sticky top-0 z-10">
               <TabsTrigger
@@ -498,46 +498,45 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
             </TabsContent>
 
             {/* Tab: Bloqueios */}
-            <TabsContent value="bloqueios" className="space-y-4 pt-4">
-              <div className="flex items-center justify-between">
-                <Label className="text-slate-700">Datas Bloqueadas</Label>
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                  <PopoverTrigger asChild>
-                    <Button type="button" variant="outline" size="sm" className="gap-2">
-                      <Plus className="w-4 h-4" />
-                      Adicionar
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-4" align="end">
-                    <div className="space-y-4">
-                      <CalendarComponent
-                        mode="single"
-                        selected={newBlockDate}
-                        onSelect={setNewBlockDate}
-                        locale={ptBR}
-                        className="rounded-md border"
-                      />
-                      <div className="space-y-2">
-                        <Label className="text-slate-700">Motivo</Label>
-                        <Input
-                          value={newBlockReason}
-                          onChange={(e) => setNewBlockReason(e.target.value)}
-                          placeholder="Ex: Férias, Congresso..."
-                          className="border-slate-200"
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        onClick={addBlockedDate}
-                        disabled={!newBlockDate}
-                        className="w-full bg-teal-600 hover:bg-teal-700"
-                      >
-                        Adicionar
-                      </Button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+            <TabsContent value="bloqueios" className="space-y-4 pt-4 pb-4">
+              <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <Label className="text-slate-700 font-semibold text-sm">Bloquear Nova Data</Label>
+                
+                <div className="flex flex-col gap-4">
+                  <div className="bg-white rounded-lg border border-slate-200 p-2 flex justify-center shadow-sm">
+                    <CalendarComponent
+                      mode="single"
+                      selected={newBlockDate}
+                      onSelect={setNewBlockDate}
+                      locale={ptBR}
+                      className="rounded-md"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-slate-700 text-sm">Motivo do Bloqueio</Label>
+                    <Input
+                      value={newBlockReason}
+                      onChange={(e) => setNewBlockReason(e.target.value)}
+                      placeholder="Ex: F\u00e9rias, Congresso..."
+                      className="border-slate-200 bg-white"
+                    />
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={addBlockedDate}
+                    disabled={!newBlockDate}
+                    className="w-full bg-teal-600 hover:bg-teal-700 h-10 shadow-sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Bloquear Data Selecionada
+                  </Button>
+                </div>
               </div>
+
+              <div className="pt-2">
+                <Label className="text-slate-700 font-semibold text-sm block mb-3">Datas Bloqueadas Ativas</Label>
 
               {scheduleConfig.blocked_dates.length === 0 ? (
                 <p className="text-slate-500 text-sm text-center py-8">
@@ -570,6 +569,7 @@ export function DoctorDialog({ open, onOpenChange, doctor }: DoctorDialogProps) 
                   ))}
                 </div>
               )}
+              </div>
             </TabsContent>
           </Tabs>
         </div>

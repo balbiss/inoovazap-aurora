@@ -174,14 +174,36 @@ export function IntegrationSettings() {
   const fetchQrCodeWithRetry = useCallback(async (pastoriniId: string, retries = 5): Promise<string | null> => {
     for (let i = 0; i < retries; i++) {
       try {
-        const { data, error } = await supabase.functions.invoke("manage-instance", {
-          body: { action: "get_qr", instance_id: pastoriniId },
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log(`[IntegrationSettings] Invoking manage-instance at production for QR...`);
+        
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-instance`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ action: "get_qr", instance_id: pastoriniId })
         });
 
-        if (error) throw error;
+        const data = await response.json();
+        const error = !response.ok ? data : null;
+
+        if (error) {
+          console.error(`QR attempt ${i + 1} Invoke Error:`, error.message, error);
+          throw error;
+        }
+
+        if (data && data.success === false) {
+           console.error(`QR attempt ${i + 1} Business Error:`, data.error);
+           setQrError(`Erro: ${data.error}`);
+           return null;
+        }
+
         if (data?.qrCode) return data.qrCode;
-      } catch (error) {
-        console.log(`QR fetch attempt ${i + 1}/${retries} failed:`, error);
+      } catch (error: any) {
+        console.error(`QR fetch attempt ${i + 1}/${retries} failed:`, error.message || error);
       }
 
       if (i < retries - 1) {
@@ -193,11 +215,19 @@ export function IntegrationSettings() {
 
   const fetchProfilePicture = useCallback(async (pastoriniId: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "get_profile_picture", instance_id: pastoriniId },
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-instance`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({ action: "get_profile_picture", instance_id: pastoriniId })
       });
 
-      if (!error && data?.profilePictureUrl) {
+      const data = await response.json();
+      if (response.ok && data?.profilePictureUrl) {
         setProfilePictureUrl(data.profilePictureUrl);
       }
     } catch (error) {
@@ -237,11 +267,21 @@ export function IntegrationSettings() {
     setQrError(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "create", instance_name: instanceName },
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-instance`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({ action: "create", instance_name: instanceName })
       });
 
-      if (error) throw error;
+      const data = await response.json();
+      if (!response.ok || data.success === false) {
+        throw new Error(data.error || "Erro ao criar instância");
+      }
 
       setInstanceData(data.instance);
       queryClient.invalidateQueries({ queryKey: ["user-instances"] });
@@ -259,34 +299,21 @@ export function IntegrationSettings() {
   const handleRestartInstance = async () => {
     if (!instanceData?.pastorini_id) return;
 
-    setIsRefreshingQr(true);
-    setQrError(null);
-
     try {
-      // Primeiro tenta dar logout (limpar sessão)
-      await supabase.functions.invoke("manage-instance", {
-        body: { action: "logout", instance_id: instanceData.pastorini_id },
-      });
-
-      // Depois busca um novo QR
-      const qr = await fetchQrCodeWithRetry(instanceData.pastorini_id, 3);
-      if (qr) {
-        setQrCode(qr);
-        toast.success("Sessão reiniciada! Tente escanear agora.");
-      } else {
-        setQrError("Não foi possível obter um novo QR Code.");
-      }
+      // Deletar a instância atual para começar do zero
+      await handleDeleteInstance();
+      setIsQrModalOpen(false);
+      setIsNameModalOpen(true);
     } catch (error) {
+      console.error("Error restarting instance:", error);
       toast.error("Erro ao reiniciar instância.");
-    } finally {
-      setIsRefreshingQr(false);
     }
   };
 
   const handleOpenQrModal = async () => {
     if (!instanceData?.pastorini_id) return;
 
-
+    console.log(`[IntegrationSettings] handleOpenQrModal with ID: ${instanceData.pastorini_id}`);
     setIsQrModalOpen(true);
     setIsRefreshingQr(true);
     setQrError(null);
@@ -315,11 +342,18 @@ export function IntegrationSettings() {
 
     setIsDeleting(true);
     try {
-      const { error } = await supabase.functions.invoke("manage-instance", {
-        body: { action: "delete", instance_id: instanceData.pastorini_id },
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-instance`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({ action: "delete", instance_id: instanceData.pastorini_id })
       });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error("Erro ao excluir instância no servidor");
 
       setInstanceData(null);
       setInstanceName("");
@@ -341,9 +375,18 @@ export function IntegrationSettings() {
     if (!instanceData?.pastorini_id) return;
 
     try {
-      await supabase.functions.invoke("manage-instance", {
-        body: { action: "logout", instance_id: instanceData.pastorini_id },
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-instance`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({ action: "logout", instance_id: instanceData.pastorini_id })
       });
+
+      if (!response.ok) throw new Error("Erro ao desconectar");
 
       setQrCode(null);
       setConnectionState("pending"); // Change to pending instead of offline since the instance still exists

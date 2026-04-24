@@ -48,8 +48,8 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
     <div className="min-h-screen bg-slate-50">
       <NotificationManager />
 
-      {/* Welcome Modal for new users */}
-      <WelcomeClinicModal open={hasNoClinic} />
+      {/* Welcome Modal for new users - Disabled to allow direct configuration */}
+      <WelcomeClinicModal open={false} />
 
       {/* Desktop Sidebar - Hidden on mobile */}
       <div className="hidden md:block">

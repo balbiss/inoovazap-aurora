@@ -7,7 +7,6 @@ import {
   Settings,
   LogOut,
   Heart,
-  Brain,
   FileText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,7 +18,6 @@ const navItems = [
   { icon: Calendar, label: "Agenda", path: "/schedule" },
   { icon: Stethoscope, label: "Profissionais", path: "/doctors" },
   { icon: Users, label: "Pacientes", path: "/patients" },
-  { icon: Brain, label: "Cérebro da IA", path: "/ai-brain" },
   { icon: FileText, label: "Relatórios", path: "/reports" },
   { icon: Settings, label: "Configurações", path: "/settings" },
 ];
