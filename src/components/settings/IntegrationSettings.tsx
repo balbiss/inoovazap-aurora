@@ -45,6 +45,7 @@ interface InstanceData {
   id: string;
   pastorini_id: string;
   company_name: string;
+  instance_name?: string;
   pastorini_status: string;
   phone_number?: string;
 }
@@ -407,6 +408,9 @@ export function IntegrationSettings() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
+                  {instanceData.instance_name && (
+                    <span className="font-medium text-foreground/70">{instanceData.instance_name} · </span>
+                  )}
                   Clique em Conectar para escanear o QR Code
                 </p>
               </div>
@@ -488,6 +492,9 @@ export function IntegrationSettings() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
+                  {instanceData.instance_name && (
+                    <span className="font-medium text-foreground/70">{instanceData.instance_name} · </span>
+                  )}
                   WhatsApp ativo e funcionando
                 </p>
               </div>
@@ -570,20 +577,23 @@ export function IntegrationSettings() {
       <Dialog open={isNameModalOpen} onOpenChange={setIsNameModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nome da Instância</DialogTitle>
+            <DialogTitle>Nova Conexão WhatsApp</DialogTitle>
             <DialogDescription>
-              Escolha um nome para identificar esta conexão WhatsApp.
+              O nome da clínica será preenchido automaticamente do seu perfil.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Nome</Label>
+              <Label>Nome da instância</Label>
               <Input
-                placeholder="Ex: Atendimento, Recepção..."
+                placeholder="Ex: Recepção, Atendimento, WhatsApp Principal..."
                 value={instanceName}
                 onChange={(e) => setInstanceName(e.target.value)}
               />
+              <p className="text-xs text-muted-foreground">
+                É o apelido desta conexão — útil se você tiver mais de um WhatsApp.
+              </p>
             </div>
           </div>
 
