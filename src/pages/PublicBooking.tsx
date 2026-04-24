@@ -657,12 +657,9 @@ export default function PublicBooking() {
                           <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
                         ))
                       ) : (
-                        <>
-                          <SelectItem value="Consulta">Consulta</SelectItem>
-                          <SelectItem value="Retorno">Retorno</SelectItem>
-                          <SelectItem value="Exame">Exame</SelectItem>
-                          <SelectItem value="Procedimento">Procedimento</SelectItem>
-                        </>
+                        <SelectItem value="Consulta" disabled>
+                          Nenhum tipo cadastrado
+                        </SelectItem>
                       )}
                     </SelectContent>
                   </Select>
@@ -674,18 +671,14 @@ export default function PublicBooking() {
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Particular">Particular</SelectItem>
-                      {clinic?.clinic_config?.insurance_types?.map((i) => (
-                        i.name !== "Particular" && <SelectItem key={i.id} value={i.name}>{i.name}</SelectItem>
-                      ))}
-                      {!clinic?.clinic_config?.insurance_types?.length && (
-                        <>
-                          <SelectItem value="Unimed">Unimed</SelectItem>
-                          <SelectItem value="Cassi">Cassi</SelectItem>
-                          <SelectItem value="Bradesco">Bradesco</SelectItem>
-                          <SelectItem value="Amil">Amil</SelectItem>
-                          <SelectItem value="Outros">Outros</SelectItem>
-                        </>
+                      {clinic?.clinic_config?.insurance_types?.length ? (
+                        clinic.clinic_config.insurance_types.map((i) => (
+                          <SelectItem key={i.id} value={i.name}>{i.name}</SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="Particular" disabled>
+                          Nenhum convênio cadastrado
+                        </SelectItem>
                       )}
                     </SelectContent>
                   </Select>
