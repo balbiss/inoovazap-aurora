@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format, getDay, addDays, isBefore, startOfDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -44,9 +44,13 @@ interface BusySlot {
 
 export default function AppointmentConfirmation() {
     const { id } = useParams<{ id: string }>();
+    const [searchParams] = useSearchParams();
+    const actionParam = searchParams.get("action"); // "confirm" | "reschedule" | null
     const [mode, setMode] = useState<"view" | "reschedule" | "success">("view");
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
     const [selectedTime, setSelectedTime] = useState("");
+    const [autoActionDone, setAutoActionDone] = useState(false);
+
 
     // Fetch appointment details
     const { data: appointment, isLoading, error, refetch } = useQuery({
@@ -196,6 +200,21 @@ export default function AppointmentConfirmation() {
         newStart.setHours(h, m, 0, 0);
         actionMutation.mutate({ action: "reschedule", newStart: format(newStart, "yyyy-MM-dd'T'HH:mm:ssXXX") });
     };
+
+    // Auto-execute action if coming from WhatsApp carousel button
+    useEffect(() => {
+        if (!appointment || autoActionDone || actionMutation.isPending) return;
+        if (appointment.status === "confirmed" || appointment.status === "cancelled") return;
+
+        if (actionParam === "confirm") {
+            setAutoActionDone(true);
+            actionMutation.mutate({ action: "confirm" });
+        } else if (actionParam === "reschedule") {
+            setAutoActionDone(true);
+            setMode("reschedule");
+        }
+    }, [appointment, actionParam, autoActionDone]);
+
 
     if (isLoading) {
         return (

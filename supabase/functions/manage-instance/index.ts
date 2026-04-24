@@ -92,26 +92,74 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Incomplete data for notification' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
 
-      // Format date
-      const date = new Date(appointment.start_time).toLocaleString('pt-BR', {
-        timeZone: 'America/Sao_Paulo',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-
-      const confirmationMessage = `Olá *${pat.name}*!\n\nSeu agendamento de *${aptType}* (${ins}) na *${inst.company_name}* com o(a) Dr(a). *${doc.name}* foi confirmado para o dia *${date}*.\n\nObrigado por utilizar nosso serviço!`
+      // Format date/time parts separately
+      const aptDate = new Date(appointment.start_time)
+      const dayName = aptDate.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long' })
+      const dateStr = aptDate.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric' })
+      const timeStr = aptDate.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })
+      const firstName = pat.name.split(' ')[0]
+      const dayCapitalized = dayName.charAt(0).toUpperCase() + dayName.slice(1)
 
       const jid = `${pat.phone.replace(/\D/g, '')}@s.whatsapp.net`
+      const confirmationUrl = `https://inoovasaude.inoovaweb.com.br/confirmation/${appointment.id}`
 
-      console.log(`Sending public confirmation for appointment ${appointment_id} to ${jid}`)
+      console.log(`Sending carousel confirmation for appointment ${appointment_id} to ${jid}`)
 
-      const result = await callPastoriniApi(`/api/instances/${inst.pastorini_id}/send-text`, 'POST', {
+      // 1. Text greeting with appointment details
+      const greetingText = `Olá *${firstName}*! 👋\n\n*${inst.company_name}* aqui! Seu agendamento está marcado:\n\n📅 *${dayCapitalized}, ${dateStr}* às *${timeStr}*\n👨‍⚕️ Dr(a). *${doc.name}*\n🏥 *${aptType}* · ${ins}\n\nPor favor, confirme sua presença no card abaixo 👇`
+
+      await callPastoriniApi(`/api/instances/${inst.pastorini_id}/send-text`, 'POST', {
         jid,
-        text: confirmationMessage
+        text: greetingText
       })
+
+      // 2. Carousel with URL buttons (confirm or reschedule)
+      let result
+      try {
+        result = await callPastoriniApi(`/api/instances/${inst.pastorini_id}/send-carousel`, 'POST', {
+          jid,
+          cards: [
+            {
+              imageUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&q=80',
+              title: '✅ Vou Comparecer!',
+              body: `Confirmar presença na consulta de ${dayCapitalized}, ${dateStr} às ${timeStr}.`,
+              footer: inst.company_name,
+              buttons: [
+                {
+                  id: `confirm_${appointment.id}`,
+                  title: '✅ Confirmar Presença',
+                  url: `${confirmationUrl}?action=confirm`
+                }
+              ]
+            },
+            {
+              imageUrl: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=600&q=80',
+              title: '📅 Preciso Reagendar',
+              body: 'Não consegue comparecer? Escolha uma nova data e horário disponível.',
+              footer: inst.company_name,
+              buttons: [
+                {
+                  id: `reschedule_${appointment.id}`,
+                  title: '📅 Reagendar Consulta',
+                  url: `${confirmationUrl}?action=reschedule`
+                }
+              ]
+            }
+          ]
+        })
+      } catch (carouselError) {
+        console.log('Carousel failed, falling back to buttons:', carouselError)
+        // Fallback: CTA URL buttons if carousel is not supported
+        result = await callPastoriniApi(`/api/instances/${inst.pastorini_id}/send-buttons`, 'POST', {
+          jid,
+          text: `Confirme sua presença ou reagende sua consulta de *${aptType}* em *${dateStr}* às *${timeStr}*:`,
+          footer: inst.company_name,
+          buttons: [
+            { type: 'cta_url', displayText: '✅ Confirmar Presença', url: `${confirmationUrl}?action=confirm` },
+            { type: 'cta_url', displayText: '📅 Reagendar Consulta', url: `${confirmationUrl}?action=reschedule` }
+          ]
+        })
+      }
 
       return new Response(JSON.stringify({ success: true, result }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
