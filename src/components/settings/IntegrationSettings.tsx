@@ -56,6 +56,7 @@ export function IntegrationSettings() {
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [instanceName, setInstanceName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [progress, setProgress] = useState(100);
   const [timeLeft, setTimeLeft] = useState(30);
@@ -254,6 +255,33 @@ export function IntegrationSettings() {
     }
   };
 
+  const handleRestartInstance = async () => {
+    if (!instanceData?.pastorini_id) return;
+
+    setIsRefreshingQr(true);
+    setQrError(null);
+
+    try {
+      // Primeiro tenta dar logout (limpar sessão)
+      await supabase.functions.invoke("manage-instance", {
+        body: { action: "logout", instance_id: instanceData.pastorini_id },
+      });
+
+      // Depois busca um novo QR
+      const qr = await fetchQrCodeWithRetry(instanceData.pastorini_id, 3);
+      if (qr) {
+        setQrCode(qr);
+        toast.success("Sessão reiniciada! Tente escanear agora.");
+      } else {
+        setQrError("Não foi possível obter um novo QR Code.");
+      }
+    } catch (error) {
+      toast.error("Erro ao reiniciar instância.");
+    } finally {
+      setIsRefreshingQr(false);
+    }
+  };
+
   const handleOpenQrModal = async () => {
     if (!instanceData?.pastorini_id) return;
 
@@ -284,19 +312,27 @@ export function IntegrationSettings() {
   const handleDeleteInstance = async () => {
     if (!instanceData?.pastorini_id) return;
 
+    setIsDeleting(true);
     try {
-      await supabase.functions.invoke("manage-instance", {
+      const { error } = await supabase.functions.invoke("manage-instance", {
         body: { action: "delete", instance_id: instanceData.pastorini_id },
       });
 
+      if (error) throw error;
+
       setInstanceData(null);
       setInstanceName("");
+      setQrCode(null);
       setConnectionState("offline");
       queryClient.invalidateQueries({ queryKey: ["user-instances"] });
 
-      toast.success("Instância excluída");
+      toast.success("Instância excluída com sucesso", {
+        description: "A instância foi removida da API e do banco de dados.",
+      });
     } catch (error: any) {
-      toast.error("Erro ao excluir", { description: error.message });
+      toast.error("Erro ao excluir instância", { description: error.message });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -388,21 +424,38 @@ export function IntegrationSettings() {
 
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
-                    <X className="w-4 h-4" />
+                  <Button
+                    size="sm"
+                    className="bg-destructive hover:bg-destructive/90 text-white"
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Excluindo...</>
+                    ) : (
+                      <><X className="w-4 h-4 mr-2" /> Excluir</>
+                    )}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir instância?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta ação irá excluir a instância "{instanceData.company_name}".
+                    <AlertDialogTitle>⚠️ Excluir instância permanentemente?</AlertDialogTitle>
+                    <AlertDialogDescription className="space-y-2">
+                      <span className="block">Você está prestes a excluir a instância <strong>"{instanceData.company_name}"</strong>.</span>
+                      <span className="block text-destructive font-medium">Esta ação irá:</span>
+                      <ul className="list-disc list-inside text-sm space-y-1">
+                        <li>Desconectar e remover a sessão do WhatsApp na API</li>
+                        <li>Excluir a instância permanentemente do banco de dados</li>
+                      </ul>
+                      <span className="block mt-2">Esta ação <strong>não pode ser desfeita</strong>.</span>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteInstance} className="bg-destructive">
-                      Excluir
+                    <AlertDialogAction
+                      onClick={handleDeleteInstance}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      Sim, excluir tudo
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -440,27 +493,72 @@ export function IntegrationSettings() {
               </div>
             </div>
 
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="text-destructive border-destructive/20">
-                  Desconectar
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Desconectar WhatsApp?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Isso irá remover a conexão com seu WhatsApp.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDisconnect} className="bg-destructive">
+            <div className="flex items-center gap-2">
+              {/* Desconectar - mantém dados, só encerra a sessão */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-amber-600 border-amber-500/30 hover:bg-amber-500/10">
                     Desconectar
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Desconectar WhatsApp?</AlertDialogTitle>
+                    <AlertDialogDescription className="space-y-2">
+                      <span className="block">A sessão do WhatsApp será encerrada, mas <strong>seus dados e configurações serão mantidos</strong>.</span>
+                      <span className="block text-sm">Você poderá reconectar escaneando um novo QR Code.</span>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDisconnect} className="bg-amber-600 hover:bg-amber-700">
+                      Desconectar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              {/* Excluir - remove tudo da API e do banco */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive border-destructive/20 hover:bg-destructive/10"
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Excluindo...</>
+                    ) : (
+                      <><X className="w-4 h-4 mr-1" /> Excluir</>
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>⚠️ Excluir instância permanentemente?</AlertDialogTitle>
+                    <AlertDialogDescription className="space-y-2">
+                      <span className="block">Você está prestes a excluir a instância <strong>"{instanceData.company_name}"</strong>.</span>
+                      <span className="block text-destructive font-medium">Esta ação irá:</span>
+                      <ul className="list-disc list-inside text-sm space-y-1">
+                        <li>Desconectar e remover a sessão do WhatsApp na API</li>
+                        <li>Excluir a instância permanentemente do banco de dados</li>
+                      </ul>
+                      <span className="block mt-2">Esta ação <strong>não pode ser desfeita</strong>.</span>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteInstance}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      Sim, excluir tudo
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
         </GlassCard>
       )}
@@ -517,23 +615,50 @@ export function IntegrationSettings() {
                 <Loader2 className="w-12 h-12 animate-spin text-primary" />
               </div>
             ) : qrError ? (
-              <div className="w-64 h-64 flex flex-col items-center justify-center gap-4">
-                <p className="text-muted-foreground text-center">{qrError}</p>
-                <Button onClick={refreshQrCode} variant="outline" size="sm">
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Tentar Novamente
-                </Button>
-              </div>
-            ) : qrCode ? (
-              <img src={qrCode} alt="QR Code" className="w-64 h-64" />
-            ) : null}
+                <div className="flex flex-col items-center justify-center min-h-[300px] text-center p-4">
+                  <X className="w-12 h-12 text-destructive mb-4" />
+                  <p className="text-destructive font-medium mb-4">{qrError}</p>
+                  <div className="flex gap-2">
+                    <Button onClick={refreshQrCode} variant="outline" size="sm">
+                      Tentar Novamente
+                    </Button>
+                    <Button onClick={handleRestartInstance} variant="secondary" size="sm">
+                      Reiniciar Sessão
+                    </Button>
+                  </div>
+                </div>
+              ) : qrCode ? (
+                <div className="flex flex-col items-center gap-6">
+                  <div className="bg-white p-4 rounded-xl shadow-inner inline-block">
+                    <img
+                      src={qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`}
+                      alt="WhatsApp QR Code"
+                      className="w-64 h-64"
+                    />
+                  </div>
+                  
+                  <div className="w-full space-y-4">
+                    <div className="flex justify-between items-center text-xs font-medium text-muted-foreground">
+                      <span>Atualiza em {timeLeft}s</span>
+                      <span>{Math.round(progress)}%</span>
+                    </div>
+                    <Progress value={progress} className="h-1.5" />
+                    
+                    <p className="text-xs text-center text-muted-foreground bg-muted/50 p-3 rounded-lg border border-border/50">
+                      Se o seu celular não ler, tente clicar em <b>Reiniciar Sessão</b> para limpar conexões antigas.
+                    </p>
 
-            <div className="w-full mt-4">
-              <Progress value={progress} className="h-1" />
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                Atualiza em {timeLeft}s
-              </p>
-            </div>
+                    <Button 
+                      onClick={handleRestartInstance} 
+                      variant="outline" 
+                      className="w-full text-xs h-8"
+                      disabled={isRefreshingQr}
+                    >
+                      {isRefreshingQr ? "Reiniciando..." : "Reiniciar Sessão"}
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
           </div>
         </DialogContent>
       </Dialog>
