@@ -532,8 +532,8 @@ export default function PublicBooking() {
                   // Disable blocked dates
                   const dateStr = format(date, "yyyy-MM-dd");
                   if (selectedDoctor.schedule_config.blocked_dates.some((b) => b.date === dateStr)) return true;
-                  // Disable dates more than 30 days in the future
-                  if (isBefore(addDays(new Date(), 30), date)) return true;
+                  // Disable dates more than 180 days in the future
+                  if (isBefore(addDays(new Date(), 180), date)) return true;
                   return false;
                 }}
                 className="pointer-events-auto mx-auto"
